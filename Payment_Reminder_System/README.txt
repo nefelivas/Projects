@@ -1,4 +1,4 @@
- Automatic Bill Payment Reminder System
+Automatic Bill Payment Reminder System
 
 This project implements an automated notification system that sends reminder emails to users whose bills are approaching their due date. The goal is to help users stay organized and avoid late payments by reminding them a few days in advance.
 
