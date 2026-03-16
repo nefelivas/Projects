@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: ideabot
+    runtime: node
+    rootDir: IdeaBot
+    buildCommand: npm install
+    startCommand: node app.js
