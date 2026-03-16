@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Workspace Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f9f9f9; color: #1a1a1a; }
+
+    header {
+      background: #4a154b;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header h1 { color: white; font-size: 1.4rem; }
+
+    .hero {
+      text-align: center;
+      padding: 80px 20px 40px;
+    }
+    .hero h2 { font-size: 2.5rem; color: #4a154b; margin-bottom: 16px; }
+    .hero p { font-size: 1.1rem; color: #555; max-width: 540px; margin: 0 auto 40px; line-height: 1.6; }
+
+    .add-to-slack {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #4a154b;
+      color: white;
+      padding: 16px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .add-to-slack:hover { background: #611f69; }
+
+    .features {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      padding: 60px 20px;
+      flex-wrap: wrap;
+    }
+    .feature {
+      background: white;
+      border-radius: 12px;
+      padding: 32px;
+      width: 240px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .feature .icon { font-size: 2.5rem; margin-bottom: 16px; }
+    .feature h3 { color: #4a154b; margin-bottom: 8px; }
+    .feature p { color: #555; font-size: 0.95rem; line-height: 1.5; }
+
+    .error {
+      text-align: center;
+      padding: 16px;
+      background: #fee;
+      color: #c00;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span style="font-size:1.5rem">💬</span>
+    <h1>Workspace Explorer</h1>
+  </header>
+
+  <div id="error-banner" class="error"></div>
+
+  <div class="hero">
+    <h2>Know Your Workspace</h2>
+    <p>Browse all channels and members in your Slack workspace. See who is in what channel, track last activity, and stay on top of your team structure.</p>
+    <a href="/auth/install" class="add-to-slack">
+      <img src="https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png" width="24" height="24" alt="Slack" />
+      Add to Slack
+    </a>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">📢</div>
+      <h3>Browse by Channel</h3>
+      <p>See every channel in your workspace and who belongs to each one.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">👥</div>
+      <h3>Browse by Member</h3>
+      <p>Select any team member and see all the channels they are part of.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🕐</div>
+      <h3>Last Activity</h3>
+      <p>See when each channel was last active, sorted oldest to newest.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🔄</div>
+      <h3>Always in Sync</h3>
+      <p>One click to sync new channels and invite the bot automatically.</p>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      const banner = document.getElementById('error-banner');
+      banner.style.display = 'block';
+      banner.textContent = 'Something went wrong. Please try again.';
+    }
+  </script>
+
+</body>
+</html>

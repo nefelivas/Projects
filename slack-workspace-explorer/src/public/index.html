@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Workspace Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --purple: #4a154b;
+      --purple-mid: #611f69;
+      --purple-light: #f3e8f4;
+      --purple-pale: #faf5fb;
+      --green: #2eb67d;
+      --green-light: #e6f7f0;
+      --red: #e01e5a;
+      --red-light: #fce8ef;
+      --yellow-light: #fdf5e0;
+      --text: #1d1c1d;
+      --text-mid: #616061;
+      --text-light: #9e9ea0;
+      --border: #e8e8e8;
+      --bg: #f8f8f8;
+      --white: #ffffff;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--purple);
+      color: white;
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.3px; }
+
+    .toolbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      gap: 16px;
+    }
+
+    .tabs { display: flex; gap: 4px; }
+
+    .tab {
+      padding: 6px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-mid);
+      border-radius: 6px;
+      transition: all 0.15s;
+      border: none;
+      background: none;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .tab:hover { background: var(--purple-pale); color: var(--purple); }
+    .tab.active { background: var(--purple-light); color: var(--purple); }
+
+    .toolbar-actions { display: flex; gap: 8px; align-items: center; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 0.825rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+      white-space: nowrap;
+    }
+
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-primary { background: var(--purple); color: white; }
+    .btn-primary:hover:not(:disabled) { background: var(--purple-mid); }
+    .btn-success { background: var(--green-light); color: var(--green); }
+    .btn-success:hover:not(:disabled) { background: #d0f0e4; }
+    .btn-danger { background: var(--red-light); color: var(--red); }
+    .btn-danger:hover:not(:disabled) { background: #f8d0dc; }
+
+    .status-bar {
+      display: none;
+      padding: 10px 28px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-bar.visible { display: flex; }
+    .status-bar.success { background: var(--green-light); color: #1a7a52; }
+    .status-bar.error { background: var(--red-light); color: #a01040; }
+
+    .layout {
+      display: flex;
+      height: calc(100vh - 108px);
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--white);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-light);
+    }
+
+    .sidebar-list { flex: 1; overflow-y: auto; }
+    .sidebar-list::-webkit-scrollbar { width: 4px; }
+    .sidebar-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+    .channel-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+      transition: background 0.1s;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .channel-item:hover { background: var(--purple-pale); }
+    .channel-item.active { background: var(--purple-light); border-left: 2px solid var(--purple); }
+
+    .channel-item-top {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .channel-icon {
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      width: 16px;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+    }
+
+    .channel-name {
+      font-weight: 600;
+      font-size: 0.88rem;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .channel-meta { font-size: 0.75rem; color: var(--text-light); padding-left: 23px; }
+
+    .channel-item-actions {
+      padding-left: 23px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-warn {
+      font-size: 0.7rem;
+      background: var(--yellow-light);
+      color: #7a5800;
+      padding: 2px 7px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+
+    .inline-btn {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.15s;
+    }
+
+    .inline-btn-add { background: var(--green-light); color: var(--green); }
+    .inline-btn-add:hover { background: #d0f0e4; }
+    .inline-btn-remove { background: var(--red-light); color: var(--red); }
+    .inline-btn-remove:hover { background: #f8d0dc; }
+
+    .member-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+      transition: background 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .member-item:hover { background: var(--purple-pale); }
+    .member-item.active { background: var(--purple-light); border-left: 2px solid var(--purple); }
+
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--purple);
+      color: white;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .avatar.lg { width: 44px; height: 44px; border-radius: 10px; font-size: 1.1rem; }
+
+    .member-info .name { font-weight: 600; font-size: 0.88rem; }
+    .member-info .handle { font-size: 0.75rem; color: var(--text-light); }
+
+    .detail { flex: 1; overflow-y: auto; background: var(--bg); }
+
+    .detail-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-light);
+      gap: 10px;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .detail-empty-icon { font-size: 1.5rem; opacity: 0.4; }
+    .detail-empty-text { font-size: 0.88rem; }
+
+    .detail-content { padding: 28px; max-width: 800px; }
+
+    .detail-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-icon {
+      width: 44px; height: 44px;
+      background: var(--purple-light);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      font-family: 'DM Mono', monospace;
+      font-weight: 600;
+      color: var(--purple);
+      flex-shrink: 0;
+    }
+
+    .detail-title { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; }
+    .detail-subtitle { color: var(--text-mid); font-size: 0.85rem; margin-top: 3px; }
+
+    .detail-stats { display: flex; gap: 12px; margin-bottom: 24px; }
+
+    .stat {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      flex: 1;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-light);
+      margin-bottom: 4px;
+    }
+
+    .stat-value { font-size: 1.1rem; font-weight: 700; }
+
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+    }
+
+    .member-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 10px;
+    }
+
+    .member-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .member-card:hover { border-color: #c9a0cc; background: var(--purple-pale); transform: translateY(-1px); }
+    .member-card .name { font-weight: 600; font-size: 0.85rem; }
+    .member-card .handle { font-size: 0.75rem; color: var(--text-light); }
+
+    .channel-row {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .channel-row-icon { font-size: 0.82rem; color: var(--text-mid); width: 16px; font-family: 'DM Mono', monospace; }
+    .channel-row-name { font-weight: 600; font-size: 0.88rem; flex: 1; }
+    .channel-row-meta { font-size: 0.78rem; color: var(--text-light); }
+
+    .tag { font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+    .tag-public { background: var(--green-light); color: var(--green); }
+    .tag-private { background: var(--yellow-light); color: #7a5800; }
+
+    .bot-warning {
+      background: var(--yellow-light);
+      border: 1px solid #f0d070;
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .bot-warning p { color: #7a5800; font-weight: 500; margin-bottom: 16px; font-size: 0.9rem; }
+
+    .loading-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--text-light);
+      font-size: 0.88rem;
+      gap: 8px;
+    }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--purple);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .welcome-state {
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--text-mid);
+    }
+
+    .welcome-state p { font-size: 0.85rem; line-height: 1.6; }
+    .welcome-state strong { color: var(--purple); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Workspace Explorer</h1>
+</header>
+
+<div class="toolbar">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('channels')">By Channel</button>
+    <button class="tab" onclick="switchTab('members')">By Member</button>
+  </div>
+  <div class="toolbar-actions">
+    <button class="btn btn-primary" onclick="syncChannels()" id="sync-btn">Sync All</button>
+    <button class="btn btn-success" onclick="addBotToPrivate()" id="add-private-btn">Add to Private</button>
+    <button class="btn btn-danger" onclick="removeBotFromPrivate()" id="remove-private-btn">Remove from Private</button>
+  </div>
+</div>
+
+<div class="status-bar" id="sync-status"></div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-header" id="list-header">Channels</div>
+    <div class="sidebar-list" id="list-container">
+      <div class="loading-state"><div class="spinner"></div> Loading...</div>
+    </div>
+  </div>
+  <div class="detail" id="detail-container">
+    <div class="detail-empty">
+      <div class="detail-empty-icon">&#8592;</div>
+      <div class="detail-empty-text">Select a channel to see its members</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const workspaceId = new URLSearchParams(window.location.search).get('workspace');
+
+  if (workspaceId && sessionStorage.getItem(`auth_${workspaceId}`) !== 'true') {
+    window.location.href = `/login?workspace=${workspaceId}`;
+  }
+
+  let currentTab = 'channels';
+  let channelsData = [];
+  let membersData = [];
+  let selectedChannelId = null;
+
+
+  async function fetchJSON(url) {
+    const separator = url.includes('?') ? '&' : '?';
+    const fullUrl = workspaceId ? `${url}${separator}workspace_id=${workspaceId}` : url;
+    const res = await fetch(fullUrl);
+    return res.json();
+  }
+
+  async function loadChannels() {
+    document.getElementById('list-container').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading channels...</div>';
+    try {
+      const data = await fetchJSON('/api/channels');
+      channelsData = data.channels || [];
+      renderChannelList();
+    } catch (e) {
+      document.getElementById('list-container').innerHTML = `<div style="padding:16px;color:var(--red);font-size:0.85rem">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  async function loadMembers() {
+    document.getElementById('list-container').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading members...</div>';
+    try {
+      const data = await fetchJSON('/api/members');
+      membersData = data.members || [];
+      renderMemberList();
+    } catch (e) {
+      document.getElementById('list-container').innerHTML = `<div style="padding:16px;color:var(--red);font-size:0.85rem">Failed to load: ${e.message}</div>`;
+    }
+  }
+
+  function renderChannelList() {
+    const sorted = [...channelsData].sort((a, b) => {
+      if (!a.last_activity) return 1;
+      if (!b.last_activity) return -1;
+      return a.last_activity - b.last_activity;
+    });
+
+    if (sorted.length === 0) {
+      document.getElementById('list-container').innerHTML = `
+        <div class="welcome-state">
+          <p>No channels loaded yet.<br/><br/>
+          Click <strong>Sync All</strong> above to load your workspace channels.<br/><br/>
+          After adding new channels, click <strong>Sync All</strong> again to refresh.</p>
+        </div>`;
+      return;
+    }
+
+    const html = sorted.map(ch => `
+      <div class="channel-item" onclick="selectChannel('${ch.id}','${escHtml(ch.name)}',${ch.is_private},${ch.last_activity||null},${ch.bot_is_member})" id="ch-${ch.id}">
+        <div class="channel-item-top">
+          <span class="channel-icon">${ch.is_private ? '🔒' : '#'}</span>
+          <span class="channel-name">${escHtml(ch.name)}</span>
+        </div>
+        <div class="channel-meta">${formatLastActivity(ch.last_activity)}</div>
+        <div class="channel-item-actions">
+          ${!ch.bot_is_member ? '<span class="badge-warn">Bot not added</span>' : ''}
+          ${!ch.bot_is_member
+            ? `<button class="inline-btn inline-btn-add" onclick="event.stopPropagation();inviteBot('${ch.id}')">+ Add Bot</button>`
+            : `<button class="inline-btn inline-btn-remove" onclick="event.stopPropagation();removeBot('${ch.id}')">- Remove Bot</button>`
+          }
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('list-container').innerHTML = html;
+  }
+
+  function renderMemberList() {
+    if (membersData.length === 0) {
+      document.getElementById('list-container').innerHTML = '<div class="welcome-state"><p>No members found.</p></div>';
+      return;
+    }
+    const html = membersData.map(m => `
+      <div class="member-item" onclick="selectMember('${m.id}','${escHtml(m.name)}','${escHtml(m.display_name)}')" id="mem-${m.id}">
+        <div class="avatar">${m.name.charAt(0).toUpperCase()}</div>
+        <div class="member-info">
+          <div class="name">${escHtml(m.name)}</div>
+          <div class="handle">@${escHtml(m.display_name)}</div>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('list-container').innerHTML = html;
+  }
+
+  async function selectChannel(id, name, isPrivate, lastActivity, botIsMember) {
+    selectedChannelId = id;
+    document.querySelectorAll('.channel-item, .member-item').forEach(el => el.classList.remove('active'));
+    document.getElementById(`ch-${id}`)?.classList.add('active');
+
+    if (!botIsMember) {
+      document.getElementById('detail-container').innerHTML = `
+        <div class="detail-content">
+          <div class="detail-header">
+            <div class="detail-icon">${isPrivate ? '🔒' : '#'}</div>
+            <div>
+              <div class="detail-title">${escHtml(name)}</div>
+              <div class="detail-subtitle">Last active: ${formatLastActivity(lastActivity)}</div>
+            </div>
+          </div>
+          <div class="bot-warning">
+            <p>The bot is not in this channel yet.<br/>Add the bot to see its members.</p>
+            <button class="btn btn-primary" onclick="inviteBot('${id}')">Add Bot to #${escHtml(name)}</button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    document.getElementById('detail-container').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading members...</div>';
+
+    try {
+      const data = await fetchJSON(`/api/channels/${id}/members`);
+      const members = data.members || [];
+
+      const memberCards = members.map(m => `
+        <div class="member-card" onclick="switchToMember('${m.id}','${escHtml(m.name)}','${escHtml(m.display_name)}')">
+          <div class="avatar">${m.name.charAt(0).toUpperCase()}</div>
+          <div>
+            <div class="name">${escHtml(m.name)}</div>
+            <div class="handle">@${escHtml(m.display_name)}</div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('detail-container').innerHTML = `
+        <div class="detail-content">
+          <div class="detail-header">
+            <div class="detail-icon">${isPrivate ? '🔒' : '#'}</div>
+            <div>
+              <div class="detail-title">${escHtml(name)}</div>
+              <div class="detail-subtitle">${isPrivate ? 'Private channel' : 'Public channel'}</div>
+            </div>
+          </div>
+          <div class="detail-stats">
+            <div class="stat">
+              <div class="stat-label">Members</div>
+              <div class="stat-value">${members.length}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Last Activity</div>
+              <div class="stat-value" style="font-size:0.9rem">${formatLastActivity(lastActivity)}</div>
+            </div>
+          </div>
+          <div class="section-label">Members</div>
+          <div class="member-grid">${memberCards || '<p style="color:var(--text-light);font-size:0.85rem">No members found</p>'}</div>
+        </div>`;
+    } catch (e) {
+      document.getElementById('detail-container').innerHTML = `<div style="padding:28px;color:var(--red);font-size:0.85rem">Error: ${e.message}</div>`;
+    }
+  }
+
+  async function selectMember(id, name, displayName) {
+    document.querySelectorAll('.channel-item, .member-item').forEach(el => el.classList.remove('active'));
+    document.getElementById(`mem-${id}`)?.classList.add('active');
+    document.getElementById('detail-container').innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading channels...</div>';
+
+    try {
+      const data = await fetchJSON(`/api/members/${id}/channels`);
+      const channels = data.channels || [];
+
+      const channelRows = channels.map(ch => `
+        <div class="channel-row">
+          <span class="channel-row-icon">${ch.is_private ? '🔒' : '#'}</span>
+          <span class="channel-row-name">${escHtml(ch.name)}</span>
+          <span class="channel-row-meta">${ch.member_count} members</span>
+          <span class="tag ${ch.is_private ? 'tag-private' : 'tag-public'}">${ch.is_private ? 'Private' : 'Public'}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('detail-container').innerHTML = `
+        <div class="detail-content">
+          <div class="detail-header">
+            <div class="avatar lg">${name.charAt(0).toUpperCase()}</div>
+            <div>
+              <div class="detail-title">${escHtml(name)}</div>
+              <div class="detail-subtitle">@${escHtml(displayName)}</div>
+            </div>
+          </div>
+          <div class="section-label">Member of ${channels.length} channel(s)</div>
+          ${channelRows || '<p style="color:var(--text-light);font-size:0.85rem">Not in any visible channels</p>'}
+        </div>`;
+    } catch (e) {
+      document.getElementById('detail-container').innerHTML = `<div style="padding:28px;color:var(--red);font-size:0.85rem">Error: ${e.message}</div>`;
+    }
+  }
+
+  function switchToMember(id, name, displayName) {
+    switchTab('members');
+    setTimeout(() => selectMember(id, name, displayName), 100);
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab').forEach((el, i) => {
+      el.classList.toggle('active', (i === 0 && tab === 'channels') || (i === 1 && tab === 'members'));
+    });
+    document.getElementById('detail-container').innerHTML = `
+      <div class="detail-empty">
+        <div class="detail-empty-icon">&#8592;</div>
+        <div class="detail-empty-text">Select a ${tab === 'channels' ? 'channel' : 'member'} to see details</div>
+      </div>`;
+    if (tab === 'channels') {
+      document.getElementById('list-header').textContent = 'Channels';
+      loadChannels();
+    } else {
+      document.getElementById('list-header').textContent = 'Members';
+      loadMembers();
+    }
+  }
+
+  function showStatus(message, type = 'success') {
+    const bar = document.getElementById('sync-status');
+    bar.textContent = message;
+    bar.className = `status-bar visible ${type}`;
+    setTimeout(() => bar.className = 'status-bar', 4000);
+  }
+
+  function formatLastActivity(timestamp) {
+    if (!timestamp) return "No activity yet";
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return minutes + "m ago";
+    if (hours < 24) return "Today " + new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (days === 1) return "Yesterday";
+    if (days < 7) return days + " days ago";
+    return new Date(timestamp).toLocaleDateString([], { day: 'numeric', month: 'short' });
+  }
+
+  async function syncChannels() {
+    const btn = document.getElementById('sync-btn');
+    btn.textContent = 'Syncing...';
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/sync${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
+      const data = await res.json();
+      showStatus(data.ok ? 'Sync complete! Your channels are up to date.' : `Sync failed: ${data.error}`, data.ok ? 'success' : 'error');
+    } catch (e) {
+      showStatus(`Error: ${e.message}`, 'error');
+    }
+    btn.textContent = 'Sync All';
+    btn.disabled = false;
+    loadChannels();
+  }
+
+  async function addBotToPrivate() {
+    const btn = document.getElementById('add-private-btn');
+    btn.textContent = 'Adding...';
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/private/invite${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
+      const data = await res.json();
+      showStatus(data.ok ? `Done! Added: ${data.success} · Already in: ${data.alreadyIn} · Failed: ${data.failed}` : `Failed: ${data.error}`, data.ok ? 'success' : 'error');
+      loadChannels();
+    } catch (e) {
+      showStatus(`Error: ${e.message}`, 'error');
+    }
+    btn.textContent = 'Add to Private';
+    btn.disabled = false;
+  }
+
+  async function removeBotFromPrivate() {
+    const btn = document.getElementById('remove-private-btn');
+    btn.textContent = 'Removing...';
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/private/remove${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
+      const data = await res.json();
+      showStatus(data.ok ? `Done! Removed: ${data.success} · Failed: ${data.failed}` : `Failed: ${data.error}`, data.ok ? 'success' : 'error');
+      loadChannels();
+    } catch (e) {
+      showStatus(`Error: ${e.message}`, 'error');
+    }
+    btn.textContent = 'Remove from Private';
+    btn.disabled = false;
+  }
+
+  async function inviteBot(channelId) {
+    try {
+      const res = await fetch(`/api/channels/${channelId}/invite${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        showStatus('Bot added to channel!', 'success');
+        const ch = channelsData.find(c => c.id === channelId);
+        if (ch) ch.bot_is_member = true;
+        renderChannelList();
+        if (selectedChannelId === channelId && ch) selectChannel(ch.id, ch.name, ch.is_private, ch.last_activity, true);
+      } else {
+        showStatus(`Failed: ${data.error}`, 'error');
+      }
+    } catch (e) {
+      showStatus(`Error: ${e.message}`, 'error');
+    }
+  }
+
+  async function removeBot(channelId) {
+    try {
+      const res = await fetch(`/api/channels/${channelId}/remove${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        showStatus('Bot removed from channel.', 'success');
+        const ch = channelsData.find(c => c.id === channelId);
+        if (ch) ch.bot_is_member = false;
+        renderChannelList();
+        if (selectedChannelId === channelId && ch) selectChannel(ch.id, ch.name, ch.is_private, ch.last_activity, false);
+      } else {
+        showStatus(`Failed: ${data.error}`, 'error');
+      }
+    } catch (e) {
+      showStatus(`Error: ${e.message}`, 'error');
+    }
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  loadChannels();
+</script>
+</body>
+</html>

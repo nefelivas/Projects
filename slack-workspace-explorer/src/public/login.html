@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Workspace Explorer — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f8f8f8;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+    .logo {
+      background: #4a154b;
+      color: white;
+      width: 40px; height: 40px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+    p { font-size: 0.875rem; color: #666; margin-bottom: 28px; }
+    label { font-size: 0.8rem; font-weight: 600; color: #444; display: block; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: 'DM Sans', sans-serif;
+      margin-bottom: 20px;
+      transition: border 0.15s;
+      outline: none;
+    }
+    input:focus { border-color: #4a154b; }
+    button {
+      width: 100%;
+      padding: 11px;
+      background: #4a154b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.15s;
+    }
+    button:hover { background: #611f69; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .error {
+      background: #fce8ef;
+      color: #a01040;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .setup-link {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.82rem;
+      color: #999;
+    }
+    .setup-link a { color: #4a154b; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">W</div>
+  <h1>Welcome back</h1>
+  <p>Enter your password to access your workspace dashboard.</p>
+  <div class="error" id="error-msg"></div>
+  <label>Password</label>
+  <input type="password" id="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"/>
+  <button onclick="login()" id="btn">Sign in</button>
+  <div class="setup-link">First time? <a href="#" onclick="showSetup()">Set up your password</a></div>
+
+  <div id="setup-form" style="display:none; margin-top:24px; border-top:1px solid #f0f0f0; padding-top:24px;">
+    <h1 style="margin-bottom:6px">Set your password</h1>
+    <p style="margin-bottom:20px">Create a password to protect your dashboard.</p>
+    <label>New Password</label>
+    <input type="password" id="new-password" placeholder="Choose a password"/>
+    <label>Confirm Password</label>
+    <input type="password" id="confirm-password" placeholder="Confirm your password" onkeydown="if(event.key==='Enter')setup()"/>
+    <button onclick="setup()" id="setup-btn">Set Password</button>
+  </div>
+</div>
+
+<script>
+  const workspaceId = new URLSearchParams(window.location.search).get('workspace');
+
+  async function login() {
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('btn');
+    const errorMsg = document.getElementById('error-msg');
+    if (!password) return showError('Please enter your password.');
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+    errorMsg.style.display = 'none';
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspace_id: workspaceId, password })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sessionStorage.setItem(`auth_${workspaceId}`, 'true');
+        window.location.href = `/dashboard?workspace=${workspaceId}`;
+      } else {
+        showError(data.error === 'Incorrect password' ? 'Incorrect password. Please try again.' : 'No password set yet. Please set one first.');
+      }
+    } catch (e) {
+      showError('Something went wrong. Please try again.');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
+
+  async function setup() {
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-password').value;
+    const btn = document.getElementById('setup-btn');
+    const errorMsg = document.getElementById('error-msg');
+    if (!newPass || !confirmPass) return showError('Please fill in both fields.');
+    if (newPass !== confirmPass) return showError('Passwords do not match.');
+    if (newPass.length < 6) return showError('Password must be at least 6 characters.');
+    btn.disabled = true;
+    btn.textContent = 'Setting up...';
+    errorMsg.style.display = 'none';
+    try {
+      const res = await fetch('/api/auth/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspace_id: workspaceId, password: newPass })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sessionStorage.setItem(`auth_${workspaceId}`, 'true');
+        window.location.href = `/dashboard?workspace=${workspaceId}`;
+      } else {
+        showError(data.error === 'Password already set' ? 'Password already set. Please log in instead.' : data.error);
+      }
+    } catch (e) {
+      showError('Something went wrong. Please try again.');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Set Password';
+  }
+
+  function showSetup() {
+    document.getElementById('setup-form').style.display = 'block';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+</script>
+</body>
+</html>
