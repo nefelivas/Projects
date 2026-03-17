@@ -13,8 +13,7 @@ router.get('/install', (req, res) => {
 
 router.get('/callback', async (req, res) => {
   const { code, error } = req.query;
-
-  if (error) return res.redirect('/?error=access_denied');
+  if (error) return res.redirect('/install?error=access_denied');
 
   try {
     const response = await axios.post('https://slack.com/api/oauth.v2.access', null, {
@@ -27,32 +26,33 @@ router.get('/callback', async (req, res) => {
     });
 
     const data = response.data;
-    if (!data.ok) return res.redirect('/?error=oauth_failed');
+    if (!data.ok) return res.redirect('/install?error=oauth_failed');
 
-    const { error: dbError } = await supabase
-      .from('workspaces')
-      .upsert({
-        workspace_id: data.team.id,
-        team_name: data.team.name,
-        bot_token: data.access_token,
-        user_token: data.authed_user.access_token,
-        installed_at: new Date().toISOString()
-      }, { onConflict: 'workspace_id' });
+    // Save workspace tokens
+    const { error: dbError } = await supabase.from('workspaces').upsert({
+      workspace_id: data.team.id,
+      team_name: data.team.name,
+      bot_token: data.access_token,
+      user_token: data.authed_user.access_token,
+      installed_at: new Date().toISOString()
+    }, { onConflict: 'workspace_id' });
 
-    if (dbError) {
-      console.error('DB error:', dbError);
-      return res.redirect('/?error=db_failed');
+    if (dbError) return res.redirect('/install?error=db_failed');
+
+    // Link workspace to logged in user
+    if (req.session.userId) {
+      await supabase.from('users').update({ workspace_id: data.team.id }).eq('id', req.session.userId);
+      req.session.workspaceId = data.team.id;
     }
 
-    // Auto sync in background after install
+    // Auto sync in background
     syncWorkspaceToSupabase(data.team.id, data.authed_user.access_token, data.access_token)
       .catch(err => console.error('Auto sync error:', err.message));
 
     res.redirect(`/dashboard?workspace=${data.team.id}`);
-
   } catch (err) {
     console.error('OAuth error:', err);
-    res.redirect('/?error=server_error');
+    res.redirect('/install?error=server_error');
   }
 });
 

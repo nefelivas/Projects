@@ -441,9 +441,6 @@
 <script>
   const workspaceId = new URLSearchParams(window.location.search).get('workspace');
 
-  if (workspaceId && sessionStorage.getItem(`auth_${workspaceId}`) !== 'true') {
-    window.location.href = `/login?workspace=${workspaceId}`;
-  }
 
   let currentTab = 'channels';
   let channelsData = [];

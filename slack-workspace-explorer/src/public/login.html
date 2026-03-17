@@ -20,7 +20,7 @@
       border-radius: 12px;
       padding: 40px;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       box-shadow: 0 2px 16px rgba(0,0,0,0.08);
     }
     .logo {
@@ -29,150 +29,152 @@
       width: 40px; height: 40px;
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: 700;
       margin-bottom: 24px;
     }
     h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
-    p { font-size: 0.875rem; color: #666; margin-bottom: 28px; }
+    .subtitle { font-size: 0.875rem; color: #666; margin-bottom: 28px; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 28px; background: #f5f5f5; padding: 4px; border-radius: 8px; }
+    .tab {
+      flex: 1; padding: 8px; text-align: center; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; border-radius: 6px; color: #666; transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif; border: none; background: none;
+    }
+    .tab.active { background: white; color: #4a154b; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
     label { font-size: 0.8rem; font-weight: 600; color: #444; display: block; margin-bottom: 6px; }
     input {
-      width: 100%;
-      padding: 10px 14px;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-family: 'DM Sans', sans-serif;
-      margin-bottom: 20px;
-      transition: border 0.15s;
-      outline: none;
+      width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px;
+      font-size: 0.9rem; font-family: 'DM Sans', sans-serif; margin-bottom: 16px;
+      transition: border 0.15s; outline: none;
     }
     input:focus { border-color: #4a154b; }
-    button {
-      width: 100%;
-      padding: 11px;
-      background: #4a154b;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-      transition: background 0.15s;
+    .btn {
+      width: 100%; padding: 11px; background: #4a154b; color: white; border: none;
+      border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; transition: background 0.15s; margin-top: 4px;
     }
-    button:hover { background: #611f69; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
-    .error {
-      background: #fce8ef;
-      color: #a01040;
-      padding: 10px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-      display: none;
-    }
-    .setup-link {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 0.82rem;
-      color: #999;
-    }
-    .setup-link a { color: #4a154b; text-decoration: none; font-weight: 600; }
+    .btn:hover { background: #611f69; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .error { background: #fce8ef; color: #a01040; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+    .success { background: #e6f7f0; color: #1a7a52; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
   </style>
 </head>
 <body>
 <div class="card">
   <div class="logo">W</div>
-  <h1>Welcome back</h1>
-  <p>Enter your password to access your workspace dashboard.</p>
-  <div class="error" id="error-msg"></div>
-  <label>Password</label>
-  <input type="password" id="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"/>
-  <button onclick="login()" id="btn">Sign in</button>
-  <div class="setup-link">First time? <a href="#" onclick="showSetup()">Set up your password</a></div>
+  <h1>Workspace Explorer</h1>
+  <p class="subtitle">Sign in or create an account to access your dashboard.</p>
 
-  <div id="setup-form" style="display:none; margin-top:24px; border-top:1px solid #f0f0f0; padding-top:24px;">
-    <h1 style="margin-bottom:6px">Set your password</h1>
-    <p style="margin-bottom:20px">Create a password to protect your dashboard.</p>
-    <label>New Password</label>
-    <input type="password" id="new-password" placeholder="Choose a password"/>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('login')">Sign in</button>
+    <button class="tab" onclick="switchTab('register')">Register</button>
+  </div>
+
+  <div id="error-msg" class="error"></div>
+  <div id="success-msg" class="success"></div>
+
+  <!-- Login Form -->
+  <div id="login-form">
+    <label>Email</label>
+    <input type="email" id="login-email" placeholder="you@company.com"/>
+    <label>Password</label>
+    <input type="password" id="login-password" placeholder="Your password" onkeydown="if(event.key==='Enter')login()"/>
+    <button class="btn" onclick="login()" id="login-btn">Sign in</button>
+  </div>
+
+  <!-- Register Form -->
+  <div id="register-form" style="display:none">
+    <label>Email</label>
+    <input type="email" id="reg-email" placeholder="you@company.com"/>
+    <label>Password</label>
+    <input type="password" id="reg-password" placeholder="Min. 6 characters"/>
     <label>Confirm Password</label>
-    <input type="password" id="confirm-password" placeholder="Confirm your password" onkeydown="if(event.key==='Enter')setup()"/>
-    <button onclick="setup()" id="setup-btn">Set Password</button>
+    <input type="password" id="reg-confirm" placeholder="Repeat password" onkeydown="if(event.key==='Enter')register()"/>
+    <button class="btn" onclick="register()" id="reg-btn">Create account</button>
   </div>
 </div>
 
 <script>
-  const workspaceId = new URLSearchParams(window.location.search).get('workspace');
-
-  async function login() {
-    const password = document.getElementById('password').value;
-    const btn = document.getElementById('btn');
-    const errorMsg = document.getElementById('error-msg');
-    if (!password) return showError('Please enter your password.');
-    btn.disabled = true;
-    btn.textContent = 'Signing in...';
-    errorMsg.style.display = 'none';
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspace_id: workspaceId, password })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        sessionStorage.setItem(`auth_${workspaceId}`, 'true');
-        window.location.href = `/dashboard?workspace=${workspaceId}`;
-      } else {
-        showError(data.error === 'Incorrect password' ? 'Incorrect password. Please try again.' : 'No password set yet. Please set one first.');
-      }
-    } catch (e) {
-      showError('Something went wrong. Please try again.');
-    }
-    btn.disabled = false;
-    btn.textContent = 'Sign in';
-  }
-
-  async function setup() {
-    const newPass = document.getElementById('new-password').value;
-    const confirmPass = document.getElementById('confirm-password').value;
-    const btn = document.getElementById('setup-btn');
-    const errorMsg = document.getElementById('error-msg');
-    if (!newPass || !confirmPass) return showError('Please fill in both fields.');
-    if (newPass !== confirmPass) return showError('Passwords do not match.');
-    if (newPass.length < 6) return showError('Password must be at least 6 characters.');
-    btn.disabled = true;
-    btn.textContent = 'Setting up...';
-    errorMsg.style.display = 'none';
-    try {
-      const res = await fetch('/api/auth/setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspace_id: workspaceId, password: newPass })
-      });
-      const data = await res.json();
-      if (data.ok) {
-        sessionStorage.setItem(`auth_${workspaceId}`, 'true');
-        window.location.href = `/dashboard?workspace=${workspaceId}`;
-      } else {
-        showError(data.error === 'Password already set' ? 'Password already set. Please log in instead.' : data.error);
-      }
-    } catch (e) {
-      showError('Something went wrong. Please try again.');
-    }
-    btn.disabled = false;
-    btn.textContent = 'Set Password';
-  }
-
-  function showSetup() {
-    document.getElementById('setup-form').style.display = 'block';
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((el, i) => {
+      el.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+    });
+    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('register-form').style.display = tab === 'register' ? 'block' : 'none';
+    hideMessages();
   }
 
   function showError(msg) {
     const el = document.getElementById('error-msg');
     el.textContent = msg;
     el.style.display = 'block';
+    document.getElementById('success-msg').style.display = 'none';
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('success-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('error-msg').style.display = 'none';
+  }
+
+  function hideMessages() {
+    document.getElementById('error-msg').style.display = 'none';
+    document.getElementById('success-msg').style.display = 'none';
+  }
+
+  async function login() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    if (!email || !password) return showError('Please fill in all fields.');
+    btn.disabled = true; btn.textContent = 'Signing in...';
+    hideMessages();
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (data.user.workspace_id) {
+          window.location.href = `/dashboard?workspace=${data.user.workspace_id}`;
+        } else {
+          window.location.href = '/install';
+        }
+      } else {
+        showError(data.error);
+      }
+    } catch (e) { showError('Something went wrong. Please try again.'); }
+    btn.disabled = false; btn.textContent = 'Sign in';
+  }
+
+  async function register() {
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    const confirm = document.getElementById('reg-confirm').value;
+    const btn = document.getElementById('reg-btn');
+    if (!email || !password || !confirm) return showError('Please fill in all fields.');
+    if (password !== confirm) return showError('Passwords do not match.');
+    if (password.length < 6) return showError('Password must be at least 6 characters.');
+    btn.disabled = true; btn.textContent = 'Creating account...';
+    hideMessages();
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        window.location.href = '/install';
+      } else {
+        showError(data.error);
+      }
+    } catch (e) { showError('Something went wrong. Please try again.'); }
+    btn.disabled = false; btn.textContent = 'Create account';
   }
 </script>
 </body>
