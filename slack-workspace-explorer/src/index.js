@@ -51,7 +51,7 @@ app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "log
 app.get("/install", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "install.html")));
 app.get("/dashboard", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
-app.post('/api/sheets/sync', requireAuthAPI, async (req, res) => {
+app.post("/api/sheets/sync", async (req, res) => {
   try {
     const { data: workspaces } = await supabase.from("workspaces").select("*");
     for (const ws of workspaces || []) {
