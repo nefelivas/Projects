@@ -58,6 +58,7 @@
     .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .error { background: #fce8ef; color: #a01040; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
     .success { background: #e6f7f0; color: #1a7a52; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+    .hint { font-size: 0.78rem; color: #999; margin-top: -10px; margin-bottom: 16px; }
   </style>
 </head>
 <body>
@@ -87,10 +88,11 @@
   <div id="register-form" style="display:none">
     <label>Email</label>
     <input type="email" id="reg-email" placeholder="you@company.com"/>
-    <label>Password</label>
-    <input type="password" id="reg-password" placeholder="Min. 6 characters"/>
     <label>Slack Workspace URL</label>
     <input type="text" id="reg-workspace" placeholder="mycompany.slack.com"/>
+    <p class="hint">Enter your workspace URL e.g. mycompany.slack.com</p>
+    <label>Password</label>
+    <input type="password" id="reg-password" placeholder="Min. 6 characters"/>
     <label>Confirm Password</label>
     <input type="password" id="reg-confirm" placeholder="Repeat password" onkeydown="if(event.key==='Enter')register()"/>
     <button class="btn" onclick="register()" id="reg-btn">Create account</button>
@@ -131,14 +133,14 @@
     const password = document.getElementById('login-password').value;
     const btn = document.getElementById('login-btn');
     if (!email || !password) return showError('Please fill in all fields.');
-    btn.disabled = true; btn.textContent = 'Signing in...';
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
     hideMessages();
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        const workspace = document.getElementById("reg-workspace").value.replace("https://", "").replace(".slack.com", "").trim();
-        body: JSON.stringify({ email, password, slack_domain: workspace })
+        body: JSON.stringify({ email, password })
       });
       const data = await res.json();
       if (data.ok) {
@@ -150,25 +152,29 @@
       } else {
         showError(data.error);
       }
-    } catch (e) { showError('Something went wrong. Please try again.'); }
-    btn.disabled = false; btn.textContent = 'Sign in';
+    } catch (e) {
+      showError('Something went wrong. Please try again.');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
   }
 
   async function register() {
     const email = document.getElementById('reg-email').value;
+    const workspace = document.getElementById('reg-workspace').value.replace('https://', '').replace('.slack.com', '').trim();
     const password = document.getElementById('reg-password').value;
     const confirm = document.getElementById('reg-confirm').value;
     const btn = document.getElementById('reg-btn');
-    if (!email || !password || !confirm) return showError('Please fill in all fields.');
+    if (!email || !password || !confirm || !workspace) return showError('Please fill in all fields.');
     if (password !== confirm) return showError('Passwords do not match.');
     if (password.length < 6) return showError('Password must be at least 6 characters.');
-    btn.disabled = true; btn.textContent = 'Creating account...';
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
     hideMessages();
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        const workspace = document.getElementById("reg-workspace").value.replace("https://", "").replace(".slack.com", "").trim();
         body: JSON.stringify({ email, password, slack_domain: workspace })
       });
       const data = await res.json();
@@ -177,8 +183,11 @@
       } else {
         showError(data.error);
       }
-    } catch (e) { showError('Something went wrong. Please try again.'); }
-    btn.disabled = false; btn.textContent = 'Create account';
+    } catch (e) {
+      showError('Something went wrong. Please try again.');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Create account';
   }
 </script>
 </body>
