@@ -38,20 +38,9 @@ app.use(session({
 app.use("/api/auth", authRoutes);
 app.use("/auth", oauthRoutes);
 app.use("/slack", slackRoutes);
-app.use("/api", requireAuthAPI, apiRoutes);
 
-app.get("/health", (req, res) => res.json({ ok: true, ts: new Date() }));
-
-app.get("/", (req, res) => {
-  if (!req.session.userId) return res.redirect("/login");
-  res.sendFile(path.join(__dirname, "public", "landing.html"));
-});
-
-app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
-app.get("/install", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "install.html")));
-app.get("/dashboard", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
-
-app.post("/api/sheets/sync", async (req, res) => {
+// Sheets sync — public, no auth required
+app.post('/api/sheets/sync', async (req, res) => {
   try {
     const { data: workspaces } = await supabase.from("workspaces").select("*");
     for (const ws of workspaces || []) {
@@ -65,6 +54,20 @@ app.post("/api/sheets/sync", async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
+
+// Protected API routes
+app.use("/api", requireAuthAPI, apiRoutes);
+
+app.get("/health", (req, res) => res.json({ ok: true, ts: new Date() }));
+
+app.get("/", (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  res.sendFile(path.join(__dirname, "public", "landing.html"));
+});
+
+app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/install", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "install.html")));
+app.get("/dashboard", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 setInterval(async () => {
   try {
