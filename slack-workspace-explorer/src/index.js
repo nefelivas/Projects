@@ -8,7 +8,7 @@ const slackRoutes = require("./routes/slack");
 const oauthRoutes = require("./routes/oauth");
 const authRoutes = require("./routes/auth");
 const { requireAuth, requireAuthAPI } = require("./middleware/requireAuth");
-const { syncToSheets } = require('./sheets');
+const { syncToSheets, syncUsersToSheets } = require('./sheets');
 const { syncWorkspaceToSupabase, getChannelsFromSupabase } = require('./slack');
 const supabase = require('./db');
 
@@ -32,31 +32,25 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'workspace-explorer-secret',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 } // 7 days
+  cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
-// Public routes
 app.use("/api/auth", authRoutes);
 app.use("/auth", oauthRoutes);
 app.use("/slack", slackRoutes);
-
-// Protected API routes
 app.use("/api", requireAuthAPI, apiRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true, ts: new Date() }));
 
-// Public pages
 app.get("/", (req, res) => {
   if (!req.session.userId) return res.redirect("/login");
   res.sendFile(path.join(__dirname, "public", "landing.html"));
 });
+
 app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/install", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "install.html")));
-
-// Protected dashboard
 app.get("/dashboard", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
-// Sheets sync
 app.post('/api/sheets/sync', requireAuthAPI, async (req, res) => {
   try {
     const { data: workspaces } = await supabase.from("workspaces").select("*");
@@ -65,6 +59,7 @@ app.post('/api/sheets/sync', requireAuthAPI, async (req, res) => {
       const channels = await getChannelsFromSupabase(ws.workspace_id);
       await syncToSheets(channels, ws.bot_token, ws.team_name);
     }
+    await syncUsersToSheets();
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -80,6 +75,7 @@ setInterval(async () => {
       const channels = await getChannelsFromSupabase(ws.workspace_id);
       await syncToSheets(channels, ws.bot_token, ws.team_name);
     }
+    await syncUsersToSheets();
     console.log('✅ Hourly sync complete');
   } catch (err) {
     console.error('Sync error:', err.message);
