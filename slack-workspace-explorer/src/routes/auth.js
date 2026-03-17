@@ -5,10 +5,9 @@ const supabase = require('../db');
 
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, slack_domain } = req.body;
+    const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ ok: false, error: 'Missing fields' });
     if (password.length < 6) return res.status(400).json({ ok: false, error: 'Password must be at least 6 characters' });
-    if (!slack_domain) return res.status(400).json({ ok: false, error: 'Please enter your Slack workspace URL' });
 
     const { data: existing } = await supabase.from('users').select('id').eq('email', email.toLowerCase()).single();
     if (existing) return res.status(400).json({ ok: false, error: 'Email already registered' });
@@ -16,8 +15,7 @@ router.post('/register', async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase.from('users').insert({
       email: email.toLowerCase(),
-      password: hash,
-      slack_domain: slack_domain.toLowerCase()
+      password: hash
     }).select().single();
 
     if (error) return res.status(500).json({ ok: false, error: error.message });
@@ -25,7 +23,6 @@ router.post('/register', async (req, res) => {
     req.session.userId = data.id;
     req.session.email = data.email;
     req.session.workspaceId = data.workspace_id;
-    req.session.slackDomain = data.slack_domain;
     req.session.slackTeamId = data.slack_team_id;
 
     res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
@@ -48,7 +45,6 @@ router.post('/login', async (req, res) => {
     req.session.userId = data.id;
     req.session.email = data.email;
     req.session.workspaceId = data.workspace_id;
-    req.session.slackDomain = data.slack_domain;
     req.session.slackTeamId = data.slack_team_id;
 
     res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
