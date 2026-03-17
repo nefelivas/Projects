@@ -26,6 +26,7 @@ router.post('/register', async (req, res) => {
     req.session.email = data.email;
     req.session.workspaceId = data.workspace_id;
     req.session.slackDomain = data.slack_domain;
+    req.session.slackTeamId = data.slack_team_id;
 
     res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
   } catch (err) {
@@ -48,6 +49,7 @@ router.post('/login', async (req, res) => {
     req.session.email = data.email;
     req.session.workspaceId = data.workspace_id;
     req.session.slackDomain = data.slack_domain;
+    req.session.slackTeamId = data.slack_team_id;
 
     res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
   } catch (err) {

@@ -10,9 +10,9 @@ router.get('/install', (req, res) => {
 
   let url = `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=${scopes}&user_scope=${userScopes}&redirect_uri=${process.env.REDIRECT_URI}`;
 
-  // Lock to user's specific workspace domain if available
-  if (req.session.slackDomain) {
-    url += `&team_domain=${req.session.slackDomain}`;
+  // Lock to user's specific workspace using team ID
+  if (req.session.slackTeamId) {
+    url += `&team=${req.session.slackTeamId}`;
   }
 
   res.redirect(url);
@@ -43,10 +43,14 @@ router.get('/callback', async (req, res) => {
       installed_at: new Date().toISOString()
     }, { onConflict: 'workspace_id' });
 
-    // Link workspace to logged in user
+    // Link workspace to logged in user and save team ID
     if (req.session.userId) {
-      await supabase.from('users').update({ workspace_id: data.team.id }).eq('id', req.session.userId);
+      await supabase.from('users').update({
+        workspace_id: data.team.id,
+        slack_team_id: data.team.id
+      }).eq('id', req.session.userId);
       req.session.workspaceId = data.team.id;
+      req.session.slackTeamId = data.team.id;
     }
 
     syncWorkspaceToSupabase(data.team.id, data.authed_user.access_token, data.access_token)
