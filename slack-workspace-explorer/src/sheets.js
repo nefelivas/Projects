@@ -9,7 +9,6 @@ async function getSheetsClient() {
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
-
   const client = await auth.getClient();
   return google.sheets({ version: 'v4', auth: client });
 }
@@ -17,48 +16,55 @@ async function getSheetsClient() {
 async function ensureTab(sheets, spreadsheetId, tabName) {
   const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
   const existingSheets = spreadsheet.data.sheets.map(s => s.properties.title);
-
   if (!existingSheets.includes(tabName)) {
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
-        requests: [{
-          addSheet: { properties: { title: tabName } }
-        }]
+        requests: [{ addSheet: { properties: { title: tabName } } }]
       }
     });
   }
 }
 
-async function syncToSheets(channels, botToken, teamName) {
+async function syncAllToSheets() {
   const sheets = await getSheetsClient();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  const tabName = teamName ? teamName.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 30) : 'Sheet1';
+  // Ensure Channels tab exists
+  await ensureTab(sheets, spreadsheetId, 'Channels');
 
-  await ensureTab(sheets, spreadsheetId, tabName);
+  // Fetch all workspaces
+  const { data: workspaces } = await supabase.from('workspaces').select('*');
 
-  const rows = [['Channel', 'Type', 'Members', 'Last Activity']];
+  const rows = [['Channel', 'Type', 'Members', 'Last Activity', 'Workspace']];
 
-  for (const ch of channels) {
-    rows.push([
-      ch.name,
-      ch.is_private ? 'Private' : 'Public',
-      ch.members || 'Bot not added',
-      ch.last_activity ? new Date(ch.last_activity).toLocaleString() : 'No activity yet',
-    ]);
+  for (const ws of workspaces || []) {
+    const { data: channels } = await supabase
+      .from('channels')
+      .select('*')
+      .eq('workspace_id', ws.workspace_id);
+
+    for (const ch of channels || []) {
+      rows.push([
+        ch.name,
+        ch.is_private ? 'Private' : 'Public',
+        ch.members || 'Bot not added',
+        ch.last_activity ? new Date(ch.last_activity).toLocaleString() : 'No activity yet',
+        ws.team_name || ws.workspace_id
+      ]);
+    }
   }
 
-  await sheets.spreadsheets.values.clear({ spreadsheetId, range: tabName });
+  // Clear and write all data
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range: 'Channels' });
   await sheets.spreadsheets.values.update({
     spreadsheetId,
-    range: `${tabName}!A1`,
+    range: 'Channels!A1',
     valueInputOption: 'RAW',
     requestBody: { values: rows },
   });
 
-  console.log(`✅ Synced ${rows.length - 1} channels to tab: ${tabName}`);
-  return rows.length - 1;
+  console.log(`✅ Synced ${rows.length - 1} total channels to Google Sheets`);
 }
 
 async function syncUsersToSheets() {
@@ -67,7 +73,6 @@ async function syncUsersToSheets() {
 
   await ensureTab(sheets, spreadsheetId, 'Users');
 
-  // Fetch users with their workspace name
   const { data: users } = await supabase
     .from('users')
     .select('email, workspace_id, workspaces(team_name)')
@@ -92,4 +97,9 @@ async function syncUsersToSheets() {
   console.log(`✅ Synced ${rows.length - 1} users to Google Sheets`);
 }
 
-module.exports = { syncToSheets, syncUsersToSheets };
+// Keep for backwards compatibility but now just calls syncAllToSheets
+async function syncToSheets(channels, botToken, teamName) {
+  await syncAllToSheets();
+}
+
+module.exports = { syncToSheets, syncAllToSheets, syncUsersToSheets };
