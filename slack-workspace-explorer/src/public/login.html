@@ -89,6 +89,8 @@
     <input type="email" id="reg-email" placeholder="you@company.com"/>
     <label>Password</label>
     <input type="password" id="reg-password" placeholder="Min. 6 characters"/>
+    <label>Slack Workspace URL</label>
+    <input type="text" id="reg-workspace" placeholder="mycompany.slack.com"/>
     <label>Confirm Password</label>
     <input type="password" id="reg-confirm" placeholder="Repeat password" onkeydown="if(event.key==='Enter')register()"/>
     <button class="btn" onclick="register()" id="reg-btn">Create account</button>
@@ -135,7 +137,8 @@
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        const workspace = document.getElementById("reg-workspace").value.replace("https://", "").replace(".slack.com", "").trim();
+        body: JSON.stringify({ email, password, slack_domain: workspace })
       });
       const data = await res.json();
       if (data.ok) {
@@ -165,7 +168,8 @@
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        const workspace = document.getElementById("reg-workspace").value.replace("https://", "").replace(".slack.com", "").trim();
+        body: JSON.stringify({ email, password, slack_domain: workspace })
       });
       const data = await res.json();
       if (data.ok) {

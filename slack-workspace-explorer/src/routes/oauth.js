@@ -7,7 +7,14 @@ const { syncWorkspaceToSupabase } = require('../slack');
 router.get('/install', (req, res) => {
   const scopes = 'channels:read,groups:read,users:read,channels:history,groups:history,channels:manage,groups:write';
   const userScopes = 'channels:read,channels:write,channels:history,groups:read,groups:write,users:read';
-  const url = `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=${scopes}&user_scope=${userScopes}&redirect_uri=${process.env.REDIRECT_URI}&single_channel=false`;
+
+  let url = `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=${scopes}&user_scope=${userScopes}&redirect_uri=${process.env.REDIRECT_URI}`;
+
+  // Lock to user's specific workspace domain if available
+  if (req.session.slackDomain) {
+    url += `&team_domain=${req.session.slackDomain}`;
+  }
+
   res.redirect(url);
 });
 
@@ -28,8 +35,7 @@ router.get('/callback', async (req, res) => {
     const data = response.data;
     if (!data.ok) return res.redirect('/install?error=oauth_failed');
 
-    // Save workspace tokens
-    const { error: dbError } = await supabase.from('workspaces').upsert({
+    await supabase.from('workspaces').upsert({
       workspace_id: data.team.id,
       team_name: data.team.name,
       bot_token: data.access_token,
@@ -37,15 +43,12 @@ router.get('/callback', async (req, res) => {
       installed_at: new Date().toISOString()
     }, { onConflict: 'workspace_id' });
 
-    if (dbError) return res.redirect('/install?error=db_failed');
-
     // Link workspace to logged in user
     if (req.session.userId) {
       await supabase.from('users').update({ workspace_id: data.team.id }).eq('id', req.session.userId);
       req.session.workspaceId = data.team.id;
     }
 
-    // Auto sync in background
     syncWorkspaceToSupabase(data.team.id, data.authed_user.access_token, data.access_token)
       .catch(err => console.error('Auto sync error:', err.message));
 

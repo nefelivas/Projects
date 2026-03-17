@@ -3,12 +3,12 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const supabase = require('../db');
 
-// POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, slack_domain } = req.body;
     if (!email || !password) return res.status(400).json({ ok: false, error: 'Missing fields' });
     if (password.length < 6) return res.status(400).json({ ok: false, error: 'Password must be at least 6 characters' });
+    if (!slack_domain) return res.status(400).json({ ok: false, error: 'Please enter your Slack workspace URL' });
 
     const { data: existing } = await supabase.from('users').select('id').eq('email', email.toLowerCase()).single();
     if (existing) return res.status(400).json({ ok: false, error: 'Email already registered' });
@@ -16,7 +16,8 @@ router.post('/register', async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
     const { data, error } = await supabase.from('users').insert({
       email: email.toLowerCase(),
-      password: hash
+      password: hash,
+      slack_domain: slack_domain.toLowerCase()
     }).select().single();
 
     if (error) return res.status(500).json({ ok: false, error: error.message });
@@ -24,6 +25,7 @@ router.post('/register', async (req, res) => {
     req.session.userId = data.id;
     req.session.email = data.email;
     req.session.workspaceId = data.workspace_id;
+    req.session.slackDomain = data.slack_domain;
 
     res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
   } catch (err) {
@@ -31,7 +33,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -46,6 +47,7 @@ router.post('/login', async (req, res) => {
     req.session.userId = data.id;
     req.session.email = data.email;
     req.session.workspaceId = data.workspace_id;
+    req.session.slackDomain = data.slack_domain;
 
     res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
   } catch (err) {
@@ -53,13 +55,11 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/logout
 router.post('/logout', (req, res) => {
   req.session.destroy();
   res.json({ ok: true });
 });
 
-// GET /api/auth/me
 router.get('/me', (req, res) => {
   if (!req.session.userId) return res.status(401).json({ ok: false, error: 'Not authenticated' });
   res.json({ ok: true, user: { email: req.session.email, workspace_id: req.session.workspaceId } });
