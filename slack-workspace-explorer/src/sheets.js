@@ -30,13 +30,19 @@ async function syncAllToSheets() {
   const sheets = await getSheetsClient();
   const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-  // Ensure Channels tab exists
   await ensureTab(sheets, spreadsheetId, 'Channels');
 
   // Fetch all workspaces
   const { data: workspaces } = await supabase.from('workspaces').select('*');
 
-  const rows = [['Channel', 'Type', 'Members', 'Last Activity', 'Workspace']];
+  // Fetch all users to map workspace_id -> email
+  const { data: users } = await supabase.from('users').select('email, workspace_id');
+  const emailMap = {};
+  for (const u of users || []) {
+    if (u.workspace_id) emailMap[u.workspace_id] = u.email;
+  }
+
+  const rows = [['Channel', 'Type', 'Members', 'Last Activity', 'Workspace', 'Email']];
 
   for (const ws of workspaces || []) {
     const { data: channels } = await supabase
@@ -44,18 +50,20 @@ async function syncAllToSheets() {
       .select('*')
       .eq('workspace_id', ws.workspace_id);
 
+    const email = emailMap[ws.workspace_id] || '';
+
     for (const ch of channels || []) {
       rows.push([
         ch.name,
         ch.is_private ? 'Private' : 'Public',
         ch.members || 'Bot not added',
         ch.last_activity ? new Date(ch.last_activity).toLocaleString() : 'No activity yet',
-        ws.team_name || ws.workspace_id
+        ws.team_name || ws.workspace_id,
+        email
       ]);
     }
   }
 
-  // Clear and write all data
   await sheets.spreadsheets.values.clear({ spreadsheetId, range: 'Channels' });
   await sheets.spreadsheets.values.update({
     spreadsheetId,
@@ -97,7 +105,6 @@ async function syncUsersToSheets() {
   console.log(`✅ Synced ${rows.length - 1} users to Google Sheets`);
 }
 
-// Keep for backwards compatibility but now just calls syncAllToSheets
 async function syncToSheets(channels, botToken, teamName) {
   await syncAllToSheets();
 }

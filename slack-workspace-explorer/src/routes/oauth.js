@@ -3,6 +3,7 @@ const router = express.Router();
 const axios = require('axios');
 const supabase = require('../db');
 const { syncWorkspaceToSupabase } = require('../slack');
+const { syncAllToSheets, syncUsersToSheets } = require('../sheets');
 
 router.get('/install', (req, res) => {
   const scopes = 'channels:read,groups:read,users:read,channels:history,groups:history,channels:manage,groups:write';
@@ -10,7 +11,6 @@ router.get('/install', (req, res) => {
 
   let url = `https://slack.com/oauth/v2/authorize?client_id=${process.env.SLACK_CLIENT_ID}&scope=${scopes}&user_scope=${userScopes}&redirect_uri=${process.env.REDIRECT_URI}`;
 
-  // Lock to user's specific workspace using team ID
   if (req.session.slackTeamId) {
     url += `&team=${req.session.slackTeamId}`;
   }
@@ -35,6 +35,7 @@ router.get('/callback', async (req, res) => {
     const data = response.data;
     if (!data.ok) return res.redirect('/install?error=oauth_failed');
 
+    // Save workspace to Supabase
     await supabase.from('workspaces').upsert({
       workspace_id: data.team.id,
       team_name: data.team.name,
@@ -43,7 +44,7 @@ router.get('/callback', async (req, res) => {
       installed_at: new Date().toISOString()
     }, { onConflict: 'workspace_id' });
 
-    // Link workspace to logged in user and save team ID
+    // Link workspace to logged in user
     if (req.session.userId) {
       await supabase.from('users').update({
         workspace_id: data.team.id,
@@ -53,8 +54,11 @@ router.get('/callback', async (req, res) => {
       req.session.slackTeamId = data.team.id;
     }
 
+    // Sync Slack data to Supabase and Google Sheets in background
     syncWorkspaceToSupabase(data.team.id, data.authed_user.access_token, data.access_token)
-      .catch(err => console.error('Auto sync error:', err.message));
+      .then(() => syncAllToSheets())
+      .then(() => syncUsersToSheets())
+      .catch(err => console.error('Post-install sync error:', err.message));
 
     res.redirect(`/dashboard?workspace=${data.team.id}`);
   } catch (err) {
