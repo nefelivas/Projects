@@ -951,7 +951,12 @@
     try {
       const res = await fetch(`/api/sync${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
       const data = await res.json();
-      showStatus(data.ok ? 'Sync complete!' : `Sync failed: ${data.error}`, data.ok ? 'success' : 'error');
+      showStatus(data.ok ? "Sync complete! Adding bot to public channels..." : `Sync failed: ${data.error}`, data.ok ? "success" : "error");
+      if (data.ok) {
+        const pubRes = await fetch(`/api/public/invite${workspaceId ? "?workspace_id=" + workspaceId : ""}`, { method: "POST" });
+        const pubData = await pubRes.json();
+        showStatus(`Sync complete! Bot added to ${pubData.success || 0} public channels.`, "success");
+      }
       if (data.ok) loadChannels();
     } catch (e) {
       showStatus(`Error: ${e.message}`, 'error');
