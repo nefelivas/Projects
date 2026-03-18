@@ -112,10 +112,12 @@ router.post("/public/invite", async (req, res) => {
   try {
     const tokens = await getTokens(req);
     const botClient = new WebClient(tokens.bot_token);
+    const userClient = new WebClient(tokens.user_token);
     const botInfo = await botClient.auth.test();
     const botUserId = botInfo.user_id;
 
-    const result = await botClient.conversations.list({
+    // Use user token to list ALL public channels (bot token only sees channels it's in)
+    const result = await userClient.conversations.list({
       types: "public_channel",
       exclude_archived: true,
       limit: 200,
@@ -124,14 +126,23 @@ router.post("/public/invite", async (req, res) => {
     let success = 0, alreadyIn = 0, failed = 0;
     for (const channel of result.channels) {
       try {
-        if (channel.is_member) { alreadyIn++; continue; }
+        // Check if bot is already a member
+        const membersRes = await userClient.conversations.members({ channel: channel.id });
+        if (membersRes.members.includes(botUserId)) {
+          alreadyIn++;
+          continue;
+        }
+        // Bot joins the public channel directly
         await botClient.conversations.join({ channel: channel.id });
         await supabase.from("channels").update({ bot_is_member: true })
           .eq("id", channel.id)
           .eq("workspace_id", tokens.workspace_id);
         success++;
-        await new Promise(r => setTimeout(r, 300));
-      } catch { failed++; }
+        await new Promise(r => setTimeout(r, 400));
+      } catch (e) {
+        console.error(`Failed to join ${channel.name}:`, e.message);
+        failed++;
+      }
     }
     res.json({ ok: true, success, alreadyIn, failed });
   } catch (err) {
