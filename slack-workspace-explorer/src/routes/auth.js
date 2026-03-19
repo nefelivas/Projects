@@ -3,6 +3,20 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const supabase = require('../db');
 
+async function getUserWorkspaces(userId) {
+  const { data } = await supabase
+    .from('user_workspaces')
+    .select('workspace_id, is_admin, workspaces(team_name)')
+    .eq('user_id', userId)
+    .eq('is_admin', true);
+
+  return (data || []).map(uw => ({
+    workspace_id: uw.workspace_id,
+    team_name: uw.workspaces?.team_name || uw.workspace_id,
+    is_admin: uw.is_admin
+  }));
+}
+
 router.post('/register', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -22,10 +36,8 @@ router.post('/register', async (req, res) => {
 
     req.session.userId = data.id;
     req.session.email = data.email;
-    req.session.workspaceId = data.workspace_id;
-    req.session.slackTeamId = data.slack_team_id;
 
-    res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
+    res.json({ ok: true, user: { email: data.email, workspaces: [] } });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -42,12 +54,13 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, data.password);
     if (!match) return res.status(401).json({ ok: false, error: 'Invalid email or password' });
 
+    const workspaces = await getUserWorkspaces(data.id);
+
     req.session.userId = data.id;
     req.session.email = data.email;
-    req.session.workspaceId = data.workspace_id;
-    req.session.slackTeamId = data.slack_team_id;
+    req.session.workspaces = workspaces;
 
-    res.json({ ok: true, user: { email: data.email, workspace_id: data.workspace_id } });
+    res.json({ ok: true, user: { email: data.email, workspaces } });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -58,9 +71,12 @@ router.post('/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ ok: false, error: 'Not authenticated' });
-  res.json({ ok: true, user: { email: req.session.email, workspace_id: req.session.workspaceId } });
+
+  const workspaces = await getUserWorkspaces(req.session.userId);
+
+  res.json({ ok: true, user: { email: req.session.email, workspaces } });
 });
 
 module.exports = router;
