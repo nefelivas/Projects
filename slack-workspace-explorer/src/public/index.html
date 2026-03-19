@@ -116,6 +116,18 @@
       border: 1px solid rgba(255,255,255,0.3);
     }
     .btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.25); }
+    .btn-ghost-danger {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,180,180,0.9);
+      border: 1px solid rgba(255,150,150,0.3);
+    }
+    .btn-ghost-danger:hover { background: rgba(255,100,100,0.2); color: white; }
+    .header-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255,255,255,0.2);
+      margin: 0 4px;
+    }
 
     .status-bar {
       display: none;
@@ -635,14 +647,14 @@
 <header>
   <h1>Workspace Explorer</h1>
   <div class="header-right">
-    <button class="btn btn-ghost" onclick="window.location.href='/picker'">Switch Workspace</button>
-    <button class="btn btn-ghost" onclick="logout()">Log out</button>
     <button class="btn btn-ghost" onclick="addBotToPrivate()" id="add-private-btn">Add to Private</button>
     <button class="btn btn-ghost" onclick="removeBotFromPrivate()" id="remove-private-btn">Remove from Private</button>
     <button class="btn btn-ghost" onclick="syncChannels()" id="sync-btn">Sync All</button>
+    <div class="header-divider"></div>
+    <button class="btn btn-ghost" onclick="window.location.href='/picker'">Switch Workspace</button>
+    <button class="btn btn-ghost-danger" onclick="logout()">Log out</button>
   </div>
 </header>
-
 <div class="toolbar">
   <div class="tabs">
     <button class="tab active" onclick="switchTab('channels')">By Channel</button>
