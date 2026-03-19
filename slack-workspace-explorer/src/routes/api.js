@@ -234,4 +234,15 @@ router.get("/debug/history/:channelId", async (req, res) => {
   }
 });
 
+router.get("/workspace-name", async (req, res) => {
+  try {
+    const { workspace_id } = await getTokens(req);
+    if (!workspace_id) return res.json({ ok: false });
+    const { data } = await supabase.from("workspaces").select("team_name").eq("workspace_id", workspace_id).single();
+    res.json({ ok: true, name: data?.team_name || workspace_id });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 module.exports = router;

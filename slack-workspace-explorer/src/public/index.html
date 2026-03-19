@@ -171,6 +171,56 @@
     }
 
     /* ── Table ── */
+    .page-wrapper {
+      padding: 24px 32px;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .workspace-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .workspace-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    .workspace-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .workspace-label {
+      font-size: 0.75rem;
+      color: var(--text-light);
+      font-weight: 500;
+    }
+
+    .table-card {
+      flex: 1;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
     .table-container {
       flex: 1;
       overflow-y: auto;
@@ -601,7 +651,16 @@
 <div class="status-bar" id="sync-status"></div>
 
 <!-- CHANNELS TAB -->
-<div id="channels-tab" style="display:flex; flex-direction:column; height:calc(100vh - 108px);">
+<div id="channels-tab" style="display:flex; flex-direction:column; height:calc(100vh - 108px); background:var(--bg);">
+  <div class="page-wrapper">
+  <div class="workspace-header" id="workspace-header" style="display:none">
+    <div class="workspace-dot"></div>
+    <div>
+      <div class="workspace-name" id="workspace-name-display"></div>
+      <div class="workspace-label">Slack Workspace</div>
+    </div>
+  </div>
+  <div class="table-card">
   <div class="search-bar">
     <input class="search-input" id="channel-search" type="text" placeholder="Search channels..." oninput="filterChannels()"/>
     <span class="count-badge" id="channel-count"></span>
@@ -611,6 +670,8 @@
       <div class="loading-state"><div class="spinner"></div> Loading channels...</div>
     </div>
     <div class="side-panel" id="side-panel"></div>
+  </div>
+  </div>
   </div>
 </div>
 
@@ -1035,6 +1096,18 @@
 
   function escHtml(str) {
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Load workspace name
+  if (workspaceId) {
+    fetch(`/api/workspace-name?workspace_id=${workspaceId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.name) {
+          document.getElementById("workspace-name-display").textContent = data.name;
+          document.getElementById("workspace-header").style.display = "flex";
+        }
+      }).catch(() => {});
   }
 
   loadChannels();
