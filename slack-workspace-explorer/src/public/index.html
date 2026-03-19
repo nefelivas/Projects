@@ -635,6 +635,8 @@
 <header>
   <h1>Workspace Explorer</h1>
   <div class="header-right">
+    <button class="btn btn-ghost" onclick="window.location.href='/picker'">Switch Workspace</button>
+    <button class="btn btn-ghost" onclick="logout()">Log out</button>
     <button class="btn btn-ghost" onclick="addBotToPrivate()" id="add-private-btn">Add to Private</button>
     <button class="btn btn-ghost" onclick="removeBotFromPrivate()" id="remove-private-btn">Remove from Private</button>
     <button class="btn btn-ghost" onclick="syncChannels()" id="sync-btn">Sync All</button>
@@ -1108,6 +1110,11 @@
           document.getElementById("workspace-header").style.display = "flex";
         }
       }).catch(() => {});
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
   }
 
   loadChannels();

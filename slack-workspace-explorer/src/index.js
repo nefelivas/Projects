@@ -67,6 +67,7 @@ app.get("/", (req, res) => {
 
 app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/install", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "install.html")));
+app.get("/picker", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "picker.html")));
 app.get("/dashboard", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
 setInterval(async () => {
