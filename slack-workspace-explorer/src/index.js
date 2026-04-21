@@ -34,7 +34,7 @@ app.use("/auth", oauthRoutes);
 app.get("/health", (req, res) => res.json({ ok: true, ts: new Date() }));
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "landing_v2.html"));
+  res.sendFile(path.join(__dirname, "public", "landing.html"));
 });
 
 app.get("/login", (req, res) => {
