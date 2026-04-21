@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Workspace Explorer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f4f5; color: #1a1a1a; }
+
+    header {
+      background: #4a154b;
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-logo { color: white; font-size: 1.1rem; font-weight: 600; letter-spacing: -0.2px; }
+    .header-actions { display: flex; gap: 10px; }
+    .btn-outline-white {
+      padding: 7px 16px;
+      background: transparent;
+      color: white;
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      transition: background 0.15s;
+    }
+    .btn-outline-white:hover { background: rgba(255,255,255,0.12); }
+    .btn-white {
+      padding: 7px 16px;
+      background: white;
+      color: #4a154b;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: opacity 0.15s;
+    }
+    .btn-white:hover { opacity: 0.9; }
+
+    #error-banner {
+      display: none;
+      background: #fee2e2;
+      color: #991b1b;
+      text-align: center;
+      padding: 12px;
+      font-size: 13px;
+      border-bottom: 1px solid #fecaca;
+    }
+
+    .hero {
+      background: white;
+      border-bottom: 1px solid #e4e4e7;
+      padding: 72px 24px 64px;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #4a154b;
+      background: #f3e8f4;
+      border: 1px solid #dbb8dc;
+      border-radius: 100px;
+      padding: 4px 14px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: #111;
+      line-height: 1.15;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: #52525b;
+      max-width: 480px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #4a154b; color: white;
+      padding: 11px 22px; border-radius: 6px;
+      font-size: 14px; font-weight: 600;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-primary:hover { background: #611f69; }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; color: #52525b;
+      padding: 11px 22px; border-radius: 6px;
+      font-size: 14px; font-weight: 500;
+      text-decoration: none; border: 1px solid #d4d4d8; cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover { border-color: #4a154b; color: #4a154b; }
+
+    .preview-wrap {
+      background: white;
+      border-bottom: 1px solid #e4e4e7;
+      padding: 0 40px 48px;
+      display: flex;
+      justify-content: center;
+    }
+    .preview-frame {
+      width: 100%; max-width: 860px;
+      border: 1px solid #e4e4e7;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    }
+    .preview-bar {
+      background: #4a154b; padding: 0 20px; height: 46px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .preview-bar-title { color: white; font-size: 13px; font-weight: 600; }
+    .preview-bar-btns { display: flex; gap: 8px; }
+    .preview-bar-btn {
+      font-size: 11px; padding: 4px 10px;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 5px; color: white; background: transparent;
+    }
+    .preview-tabs {
+      background: white; border-bottom: 1px solid #e4e4e7;
+      padding: 0 20px; display: flex; gap: 4px;
+    }
+    .preview-tab { padding: 10px 16px; font-size: 12px; font-weight: 500; border-bottom: 2px solid transparent; color: #71717a; }
+    .preview-tab.active { border-bottom-color: #4a154b; color: #4a154b; }
+    .preview-body { background: #f4f4f5; padding: 16px 20px; }
+    .preview-ws {
+      background: white; border: 1px solid #e4e4e7; border-radius: 8px;
+      padding: 12px 16px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ws-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
+    .ws-name { font-size: 13px; font-weight: 600; }
+    .ws-sub { font-size: 11px; color: #71717a; }
+    .preview-table { background: white; border: 1px solid #e4e4e7; border-radius: 8px; overflow: hidden; }
+    .preview-table-head {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr 1fr;
+      padding: 8px 16px; background: #fafafa;
+      border-bottom: 1px solid #e4e4e7;
+    }
+    .preview-th { font-size: 10px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; }
+    .preview-row {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr 1fr;
+      padding: 10px 16px; border-bottom: 1px solid #f4f4f5; align-items: center;
+    }
+    .preview-row:last-child { border-bottom: none; }
+    .preview-ch { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .preview-ch-icon { color: #71717a; font-size: 11px; }
+    .preview-td { font-size: 12px; color: #3f3f46; }
+    .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+    .badge-private { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-public  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-remove  { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+
+    .features-section { padding: 64px 24px; max-width: 900px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 40px; }
+    .section-header h2 { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.3px; }
+    .section-header p { font-size: 0.95rem; color: #52525b; margin-top: 8px; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .feature-card { background: white; border: 1px solid #e4e4e7; border-radius: 10px; padding: 24px; }
+    .feature-icon {
+      width: 38px; height: 38px; background: #f3e8f4; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+    }
+    .feature-icon svg { width: 18px; height: 18px; stroke: #4a154b; fill: none; stroke-width: 1.8; }
+    .feature-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .feature-card p { font-size: 13px; color: #52525b; line-height: 1.6; }
+
+    .privacy-note {
+      background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;
+      padding: 14px 20px; display: flex; align-items: center; gap: 10px;
+      max-width: 560px; margin: 0 auto 64px;
+    }
+    .privacy-check { color: #16a34a; font-size: 18px; flex-shrink: 0; }
+    .privacy-note p { font-size: 13px; color: #166534; line-height: 1.5; }
+
+    .cta-section { background: #4a154b; padding: 56px 24px; text-align: center; }
+    .cta-section h2 { font-size: 1.6rem; font-weight: 700; color: white; margin-bottom: 10px; }
+    .cta-section p { font-size: 14px; color: rgba(255,255,255,0.65); margin-bottom: 28px; }
+    .btn-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: white; color: #4a154b;
+      padding: 12px 24px; border-radius: 6px;
+      font-size: 14px; font-weight: 600;
+      text-decoration: none; border: none; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-cta:hover { opacity: 0.9; }
+
+    footer {
+      background: #fafafa; border-top: 1px solid #e4e4e7;
+      padding: 20px 32px; text-align: center;
+      font-size: 12px; color: #a1a1aa;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="header-logo">Workspace Explorer</span>
+    <div class="header-actions">
+      <a href="/login" class="btn-outline-white">Sign in</a>
+      <a href="/auth/install" class="btn-white">
+        <img src="https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png" width="15" height="15" alt="" />
+        Add to Slack
+      </a>
+    </div>
+  </header>
+
+  <div id="error-banner"></div>
+
+  <section class="hero">
+    <div class="hero-eyebrow">Built for Slack workspaces</div>
+    <h1>See your Slack workspace<br>clearly.</h1>
+    <p>Track channel activity, browse members, and understand your team structure — all in one place.</p>
+    <div class="hero-actions">
+      <a href="/auth/install" class="btn-primary">
+        <img src="https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png" width="16" height="16" alt="" />
+        Add to Slack
+      </a>
+      <a href="/login" class="btn-secondary">Already installed? Sign in</a>
+    </div>
+  </section>
+
+  <div class="preview-wrap">
+    <div class="preview-frame">
+      <div class="preview-bar">
+        <span class="preview-bar-title">Workspace Explorer</span>
+        <div class="preview-bar-btns">
+          <span class="preview-bar-btn">Add to Private</span>
+          <span class="preview-bar-btn">Sync All</span>
+        </div>
+      </div>
+      <div class="preview-tabs">
+        <div class="preview-tab active">By Channel</div>
+        <div class="preview-tab">By Member</div>
+      </div>
+      <div class="preview-body">
+        <div class="preview-ws">
+          <div class="ws-dot"></div>
+          <div>
+            <div class="ws-name">your-workspace</div>
+            <div class="ws-sub">Slack Workspace</div>
+          </div>
+        </div>
+        <div class="preview-table">
+          <div class="preview-table-head">
+            <span class="preview-th">Channel</span>
+            <span class="preview-th">Type</span>
+            <span class="preview-th">Members</span>
+            <span class="preview-th">Last Activity</span>
+            <span class="preview-th">Bot</span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-ch"><span class="preview-ch-icon">#</span> general</span>
+            <span><span class="badge badge-public">Public</span></span>
+            <span class="preview-td">24</span>
+            <span class="preview-td">2 hours ago</span>
+            <span><span class="badge-remove">− Remove</span></span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-ch"><span class="preview-ch-icon">🔒</span> design</span>
+            <span><span class="badge badge-private">Private</span></span>
+            <span class="preview-td">8</span>
+            <span class="preview-td">3 days ago</span>
+            <span><span class="badge-remove">− Remove</span></span>
+          </div>
+          <div class="preview-row">
+            <span class="preview-ch"><span class="preview-ch-icon">#</span> old-project</span>
+            <span><span class="badge badge-public">Public</span></span>
+            <span class="preview-td">5</span>
+            <span class="preview-td">4 months ago</span>
+            <span><span class="badge-remove">− Remove</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="features-section">
+    <div class="section-header">
+      <h2>Everything about your workspace, at a glance</h2>
+      <p>No digging through Slack settings. Just the information you need.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>Channel overview</h3>
+        <p>Browse every channel with member counts, privacy status, and last activity.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+        <h3>Member lookup</h3>
+        <p>Select any team member and instantly see every channel they belong to.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <h3>Activity tracking</h3>
+        <p>Find dead channels before they pile up — sorted oldest to newest.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+        </div>
+        <h3>Auto sync</h3>
+        <p>Syncs automatically every hour. Always up to date, no manual refresh needed.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="privacy-note">
+    <span class="privacy-check">✓</span>
+    <p><strong>Privacy-first.</strong> Only channel activity timestamps are stored — no message content, files, or personal data is ever read or saved.</p>
+  </div>
+
+  <section class="cta-section">
+    <h2>Ready to explore your workspace?</h2>
+    <p>Install takes under a minute. No credit card required.</p>
+    <a href="/auth/install" class="btn-cta">
+      <img src="https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png" width="16" height="16" alt="" />
+      Add to Slack
+    </a>
+  </section>
+
+  <footer>
+    Workspace Explorer &mdash; Built with Node.js &amp; Supabase
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) {
+      const banner = document.getElementById('error-banner');
+      banner.style.display = 'block';
+      banner.textContent = 'Something went wrong. Please try again.';
+    }
+  </script>
+
+</body>
+</html>
