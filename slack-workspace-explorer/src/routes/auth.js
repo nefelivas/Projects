@@ -73,9 +73,7 @@ router.post('/logout', (req, res) => {
 
 router.get('/me', async (req, res) => {
   if (!req.session.userId) return res.status(401).json({ ok: false, error: 'Not authenticated' });
-
   const workspaces = await getUserWorkspaces(req.session.userId);
-
   res.json({ ok: true, user: { email: req.session.email, workspaces } });
 });
 

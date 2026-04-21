@@ -1,12 +1,14 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
+const session = require("express-session");
 
 const apiRoutes = require("./routes/api");
 const slackRoutes = require("./routes/slack");
 const oauthRoutes = require("./routes/oauth");
 const authRoutes = require("./routes/auth");
-const { syncToSheets } = require('./sheets');
+const { requireAuth, requireAuthAPI } = require("./middleware/requireAuth");
+const { syncToSheets, syncAllToSheets, syncUsersToSheets } = require('./sheets');
 const { syncWorkspaceToSupabase, getChannelsFromSupabase } = require('./slack');
 const supabase = require('./db');
 
@@ -26,25 +28,19 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", apiRoutes);
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'workspace-explorer-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
+}));
+
+// Public auth routes
 app.use("/api/auth", authRoutes);
-app.use("/slack", slackRoutes);
 app.use("/auth", oauthRoutes);
+app.use("/slack", slackRoutes);
 
-app.get("/health", (req, res) => res.json({ ok: true, ts: new Date() }));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "landing.html"));
-});
-
-app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "login.html"));
-});
-
-app.get("/dashboard", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
+// Public sheets sync
 app.post('/api/sheets/sync', async (req, res) => {
   try {
     const { data: workspaces } = await supabase.from("workspaces").select("*");
@@ -53,12 +49,30 @@ app.post('/api/sheets/sync', async (req, res) => {
       const channels = await getChannelsFromSupabase(ws.workspace_id);
       await syncToSheets(channels, ws.bot_token, ws.team_name);
     }
+    await syncUsersToSheets();
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
 
+// Protected API routes
+app.use("/api", requireAuthAPI, apiRoutes);
+
+app.get("/health", (req, res) => res.json({ ok: true, ts: new Date() }));
+
+// Pages
+app.get("/", (req, res) => {
+  if (!req.session.userId) return res.redirect("/login");
+  res.sendFile(path.join(__dirname, "public", "landing.html"));
+});
+
+app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
+app.get("/install", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "install.html")));
+app.get("/picker", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "picker.html")));
+app.get("/dashboard", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
+
+// Hourly sync
 setInterval(async () => {
   try {
     console.log('⏰ Running hourly sync for all workspaces...');
@@ -68,6 +82,7 @@ setInterval(async () => {
       const channels = await getChannelsFromSupabase(ws.workspace_id);
       await syncToSheets(channels, ws.bot_token, ws.team_name);
     }
+    await syncUsersToSheets();
     console.log('✅ Hourly sync complete');
   } catch (err) {
     console.error('Sync error:', err.message);
