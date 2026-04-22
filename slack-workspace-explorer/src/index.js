@@ -62,10 +62,11 @@ app.use("/api", requireAuthAPI, apiRoutes);
 app.get("/health", (req, res) => res.json({ ok: true, ts: new Date() }));
 
 // Pages
-app.get("/", (req, res) => {
-  if (!req.session.userId) return res.redirect("/login");
-  res.sendFile(path.join(__dirname, "public", "landing.html"));
-});
+app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "landing.html")));
+
+
+
+
 
 app.get("/login", (req, res) => res.sendFile(path.join(__dirname, "public", "login.html")));
 app.get("/install", requireAuth, (req, res) => res.sendFile(path.join(__dirname, "public", "install.html")));
