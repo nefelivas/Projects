@@ -1,121 +1,484 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Workspace Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; background: #f9f9f9; color: #1a1a1a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    header {
-      background: #4a154b;
-      padding: 20px 40px;
+    :root {
+      --purple: #4a154b;
+      --purple-mid: #611f69;
+      --purple-light: #f3e8f4;
+      --green: #2eb67d;
+      --text: #1a1a1a;
+      --text-mid: #555;
+      --text-light: #888;
+      --border: #eaeaea;
+      --bg: #fafafa;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: white;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      padding: 0 48px;
+      height: 64px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: white;
+      z-index: 100;
     }
-    header h1 { color: white; font-size: 1.4rem; }
 
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-logo-icon {
+      width: 32px; height: 32px;
+      background: var(--purple);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .nav-logo-text {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+
+    .btn-nav-login {
+      padding: 8px 18px;
+      border-radius: 7px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-nav-login:hover { border-color: var(--purple); color: var(--purple); }
+
+    .btn-nav-primary {
+      padding: 8px 18px;
+      border-radius: 7px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      border: none;
+      background: var(--purple);
+      color: white;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-nav-primary:hover { background: var(--purple-mid); }
+
+    /* HERO */
     .hero {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 96px 24px 80px;
       text-align: center;
-      padding: 80px 20px 40px;
     }
-    .hero h2 { font-size: 2.5rem; color: #4a154b; margin-bottom: 16px; }
-    .hero p { font-size: 1.1rem; color: #555; max-width: 540px; margin: 0 auto 40px; line-height: 1.6; }
 
-    .add-to-slack {
+    .hero-badge {
       display: inline-flex;
       align-items: center;
-      gap: 12px;
-      background: #4a154b;
-      color: white;
-      padding: 16px 32px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-size: 1.1rem;
+      gap: 6px;
+      background: var(--purple-light);
+      color: var(--purple);
+      padding: 5px 14px;
+      border-radius: 99px;
+      font-size: 0.8rem;
       font-weight: 600;
-      transition: background 0.2s;
+      margin-bottom: 28px;
+      letter-spacing: 0.2px;
     }
-    .add-to-slack:hover { background: #611f69; }
 
-    .features {
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      background: var(--purple);
+      border-radius: 50%;
+    }
+
+    h1 {
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    h1 span { color: var(--purple); }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-mid);
+      line-height: 1.7;
+      max-width: 520px;
+      margin: 0 auto 40px;
+      font-weight: 400;
+    }
+
+    .hero-actions {
       display: flex;
+      align-items: center;
       justify-content: center;
-      gap: 32px;
-      padding: 60px 20px;
+      gap: 12px;
       flex-wrap: wrap;
     }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 24px;
+      background: var(--purple);
+      color: white;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover { background: var(--purple-mid); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(74,21,75,0.25); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 24px;
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover { border-color: var(--purple); color: var(--purple); }
+
+    /* DIVIDER */
+    .divider {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* FEATURES */
+    .features {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .features-label {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-light);
+      margin-bottom: 14px;
+    }
+
+    .features-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      margin-bottom: 56px;
+      color: var(--text);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
     .feature {
       background: white;
-      border-radius: 12px;
-      padding: 32px;
-      width: 240px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 32px 28px;
+      transition: background 0.15s;
     }
-    .feature .icon { font-size: 2.5rem; margin-bottom: 16px; }
-    .feature h3 { color: #4a154b; margin-bottom: 8px; }
-    .feature p { color: #555; font-size: 0.95rem; line-height: 1.5; }
 
-    .error {
+    .feature:hover { background: var(--bg); }
+
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: var(--purple-light);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+    }
+
+    .feature-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.2px;
+    }
+
+    .feature-desc {
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      line-height: 1.6;
+    }
+
+    /* STATS */
+    .stats {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stats-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 56px 24px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
       text-align: center;
-      padding: 16px;
-      background: #fee;
-      color: #c00;
-      display: none;
+    }
+
+    .stat-number {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--purple);
+      letter-spacing: -1px;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-mid);
+      font-weight: 500;
+    }
+
+    /* CTA */
+    .cta {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 96px 24px;
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      font-size: 1rem;
+      color: var(--text-mid);
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--text-mid);
+    }
+
+    .footer-logo-icon {
+      width: 24px; height: 24px;
+      background: var(--purple);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+
+    .footer-text {
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    @media (max-width: 700px) {
+      h1 { font-size: 2.2rem; }
+      .features-grid { grid-template-columns: 1fr; }
+      .stats-inner { grid-template-columns: 1fr; gap: 24px; }
+      nav { padding: 0 20px; }
+      footer { flex-direction: column; gap: 12px; text-align: center; }
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <span style="font-size:1.5rem">💬</span>
-    <h1>Workspace Explorer</h1>
-  </header>
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="nav-logo-icon">W</div>
+    <span class="nav-logo-text">Workspace Explorer</span>
+  </a>
+  <div class="nav-actions">
+    <a class="btn-nav-login" href="/login">Sign in</a>
+    <a class="btn-nav-primary" href="/install">Get Started</a>
+  </div>
+</nav>
 
-  <div id="error-banner" class="error"></div>
-
-  <div class="hero">
-    <h2>Know Your Workspace</h2>
-    <p>Browse all channels and members in your Slack workspace. See who is in what channel, track last activity, and stay on top of your team structure.</p>
-    <a href="/auth/install" class="add-to-slack">
-      <img src="https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png" width="24" height="24" alt="Slack" />
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    Built for Slack Admins
+  </div>
+  <h1>Full visibility into your <span>Slack workspace</span></h1>
+  <p class="hero-sub">See every channel, every member, and when they were last active — all in one clean dashboard. No more clicking around Slack.</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="/install">
+      <svg width="18" height="18" viewBox="0 0 122.8 122.8" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9zm6.5 0c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z" fill="white"/>
+        <path d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2zm0 6.5c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z" fill="white"/>
+        <path d="M97 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97V45.2zm-6.5 0c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.7 5.8 70.5 0 77.6 0s12.9 5.8 12.9 12.9v32.3z" fill="white"/>
+        <path d="M77.6 97c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97h12.9zm0-6.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.6z" fill="white"/>
+      </svg>
       Add to Slack
     </a>
+    <a class="btn-secondary" href="/login">Sign in →</a>
   </div>
+</section>
 
-  <div class="features">
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section class="features">
+  <p class="features-label">Features</p>
+  <h2 class="features-title">Everything you need to manage your workspace</h2>
+  <div class="features-grid">
     <div class="feature">
-      <div class="icon">📢</div>
-      <h3>Browse by Channel</h3>
-      <p>See every channel in your workspace and who belongs to each one.</p>
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Channel Overview</div>
+      <p class="feature-desc">See all public and private channels in a sortable table with last activity, member count, and bot status.</p>
     </div>
     <div class="feature">
-      <div class="icon">👥</div>
-      <h3>Browse by Member</h3>
-      <p>Select any team member and see all the channels they are part of.</p>
+      <div class="feature-icon">👥</div>
+      <div class="feature-title">Member Insights</div>
+      <p class="feature-desc">Browse all workspace members and instantly see which channels each person belongs to.</p>
     </div>
     <div class="feature">
-      <div class="icon">🕐</div>
-      <h3>Last Activity</h3>
-      <p>See when each channel was last active, sorted oldest to newest.</p>
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">Bot Management</div>
+      <p class="feature-desc">Add or remove the bot from channels individually or in bulk — public and private.</p>
     </div>
     <div class="feature">
-      <div class="icon">🔄</div>
-      <h3>Always in Sync</h3>
-      <p>One click to sync new channels and invite the bot automatically.</p>
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Auto Sync</div>
+      <p class="feature-desc">Your workspace data syncs automatically every hour. Always up to date without lifting a finger.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Secure & Private</div>
+      <p class="feature-desc">Server-side authentication, encrypted tokens, and complete data isolation between workspaces.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🏢</div>
+      <div class="feature-title">Multi-Workspace</div>
+      <p class="feature-desc">Manage multiple Slack workspaces from a single account. Switch between them in one click.</p>
     </div>
   </div>
+</section>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('error')) {
-      const banner = document.getElementById('error-banner');
-      banner.style.display = 'block';
-      banner.textContent = 'Something went wrong. Please try again.';
-    }
-  </script>
+<!-- STATS -->
+<section class="stats">
+  <div class="stats-inner">
+    <div>
+      <div class="stat-number">200+</div>
+      <div class="stat-label">Channels synced per workspace</div>
+    </div>
+    <div>
+      <div class="stat-number">1hr</div>
+      <div class="stat-label">Automatic sync interval</div>
+    </div>
+    <div>
+      <div class="stat-number">0</div>
+      <div class="stat-label">Message content stored</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>Ready to get started?</h2>
+  <p>Connect your Slack workspace in under a minute. No credit card required.</p>
+  <a class="btn-primary" href="/install">
+    <svg width="18" height="18" viewBox="0 0 122.8 122.8" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9zm6.5 0c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z" fill="white"/>
+      <path d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2zm0 6.5c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z" fill="white"/>
+      <path d="M97 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97V45.2zm-6.5 0c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.7 5.8 70.5 0 77.6 0s12.9 5.8 12.9 12.9v32.3z" fill="white"/>
+      <path d="M77.6 97c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97h12.9zm0-6.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.6z" fill="white"/>
+    </svg>
+    Add to Slack — it's free
+  </a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <div class="footer-logo-icon">W</div>
+    Workspace Explorer
+  </div>
+  <p class="footer-text">© 2026 Workspace Explorer. Built for Slack admins.</p>
+</footer>
 
 </body>
 </html>
