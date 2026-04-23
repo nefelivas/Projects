@@ -657,6 +657,16 @@
     .progress-bar-wrap { background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; margin-bottom: 10px; }
     .progress-bar-fill { height: 100%; background: var(--purple); border-radius: 99px; transition: width 0.3s ease; width: 0%; }
     .progress-count { font-size: 0.78rem; color: var(--text-light); font-weight: 600; }
+
+    .ws-badges { display: flex; gap: 8px; margin-top: 6px; }
+    .ws-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 99px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .ws-badge-channels { background: #f3e8f4; color: #4a154b; }
+    .ws-badge-members  { background: #e6f7f0; color: #1a7a52; }
+    .ws-badge svg { width: 11px; height: 11px; }
   </style>
 </head>
 <body>
