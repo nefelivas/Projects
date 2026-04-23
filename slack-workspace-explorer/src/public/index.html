@@ -1050,29 +1050,37 @@
     subtitle.textContent = 'Connecting to Slack';
     fill.style.width = '0%';
     count.textContent = '';
+
     try {
+      await fetch(`/api/sync/start${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
+
       await new Promise((resolve, reject) => {
-        const url = `/api/sync/progress${workspaceId ? '?workspace_id=' + workspaceId : ''}`;
-        const es = new EventSource(url);
-        es.onmessage = (e) => {
-          const msg = JSON.parse(e.data);
-          if (msg.type === 'start') {
-            count.textContent = `0 / ${msg.total} channels`;
-          } else if (msg.type === 'progress') {
-            const pct = Math.round((msg.done / msg.total) * 100);
-            fill.style.width = pct + '%';
-            count.textContent = `${msg.done} / ${msg.total} channels`;
-            subtitle.textContent = '#' + msg.channel;
-          } else if (msg.type === 'done') {
-            fill.style.width = '100%';
-            subtitle.textContent = 'Sync complete!';
-            es.close(); resolve();
-          } else if (msg.type === 'error') {
-            es.close(); reject(new Error(msg.message));
+        const interval = setInterval(async () => {
+          try {
+            const res = await fetch(`/api/sync/status${workspaceId ? '?workspace_id=' + workspaceId : ''}`);
+            const msg = await res.json();
+
+            if (msg.status === 'running' && msg.total > 0) {
+              const pct = Math.round((msg.done / msg.total) * 100);
+              fill.style.width = pct + '%';
+              count.textContent = `${msg.done} / ${msg.total} channels`;
+              subtitle.textContent = msg.channel ? '#' + msg.channel : 'Syncing...';
+            } else if (msg.status === 'done') {
+              fill.style.width = '100%';
+              subtitle.textContent = 'Sync complete!';
+              clearInterval(interval);
+              resolve();
+            } else if (msg.status === 'error') {
+              clearInterval(interval);
+              reject(new Error(msg.message));
+            }
+          } catch (e) {
+            clearInterval(interval);
+            reject(e);
           }
-        };
-        es.onerror = () => { es.close(); reject(new Error('Connection lost')); };
+        }, 1000);
       });
+
       showStatus('Sync complete!', 'success');
       loadChannels();
     } catch (e) {
