@@ -1041,49 +1041,44 @@
     btn.textContent = 'Syncing...';
     btn.disabled = true;
     const overlay = document.getElementById('progress-overlay');
-    const title = document.getElementById('progress-title');
     const subtitle = document.getElementById('progress-subtitle');
     const fill = document.getElementById('progress-bar-fill');
     const count = document.getElementById('progress-count');
+
     overlay.classList.add('visible');
-    title.textContent = 'Syncing workspace...';
-    subtitle.textContent = 'Connecting to Slack';
     fill.style.width = '0%';
     count.textContent = '';
 
+    const messages = [
+      'Connecting to Slack...', 'Fetching channels...', 'Reading members...',
+      'Checking activity...', 'Almost there...', 'Still working...'
+    ];
+    let msgIndex = 0;
+    subtitle.textContent = messages[0];
+
+    const msgInterval = setInterval(() => {
+      msgIndex = Math.min(msgIndex + 1, messages.length - 1);
+      subtitle.textContent = messages[msgIndex];
+    }, 4000);
+
+    const barInterval = setInterval(() => {
+      const current = parseFloat(fill.style.width) || 0;
+      if (current < 85) fill.style.width = (current + (85 - current) * 0.05) + '%';
+    }, 500);
+
     try {
-      await fetch(`/api/sync/start${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
-
-      await new Promise((resolve, reject) => {
-        const interval = setInterval(async () => {
-          try {
-            const res = await fetch(`/api/sync/status${workspaceId ? '?workspace_id=' + workspaceId : ''}`);
-            const msg = await res.json();
-
-            if (msg.status === 'running' && msg.total > 0) {
-              const pct = Math.round((msg.done / msg.total) * 100);
-              fill.style.width = pct + '%';
-              count.textContent = `${msg.done} / ${msg.total} channels`;
-              subtitle.textContent = msg.channel ? '#' + msg.channel : 'Syncing...';
-            } else if (msg.status === 'done') {
-              fill.style.width = '100%';
-              subtitle.textContent = 'Sync complete!';
-              clearInterval(interval);
-              resolve();
-            } else if (msg.status === 'error') {
-              clearInterval(interval);
-              reject(new Error(msg.message));
-            }
-          } catch (e) {
-            clearInterval(interval);
-            reject(e);
-          }
-        }, 1000);
-      });
-
-      showStatus('Sync complete!', 'success');
-      loadChannels();
+      const res = await fetch(`/api/sync${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
+      const data = await res.json();
+      clearInterval(msgInterval);
+      clearInterval(barInterval);
+      fill.style.width = '100%';
+      subtitle.textContent = 'Sync complete!';
+      await new Promise(r => setTimeout(r, 600));
+      if (data.ok) { showStatus('Sync complete!', 'success'); loadChannels(); }
+      else showStatus(`Sync failed: ${data.error}`, 'error');
     } catch (e) {
+      clearInterval(msgInterval);
+      clearInterval(barInterval);
       showStatus(`Error: ${e.message}`, 'error');
     }
     overlay.classList.remove('visible');
