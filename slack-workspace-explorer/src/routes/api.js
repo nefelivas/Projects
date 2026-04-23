@@ -65,42 +65,34 @@ router.get("/members/:id/channels", async (req, res) => {
   }
 });
 
-router.get("/sync/progress", async (req, res) => {
+// In-memory progress store
+const syncProgress = {};
+
+router.get("/sync/status", async (req, res) => {
+  const workspaceId = req.query.workspace_id;
+  const progress = syncProgress[workspaceId] || { status: "idle" };
+  res.json(progress);
+});
+
+router.post("/sync/start", async (req, res) => {
   const tokens = await getTokens(req);
+  const wid = tokens.workspace_id;
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders();
+  syncProgress[wid] = { status: "running", done: 0, total: 0, channel: "" };
+  res.json({ ok: true });
 
-  const send = (data) => { res.write(`data: ${JSON.stringify(data)}\n\n`); if (res.flush) res.flush(); };
-
-  try {
-    const userClient = new WebClient(tokens.user_token);
-    const channelsResult = await userClient.conversations.list({
-      types: "public_channel,private_channel",
-      exclude_archived: true,
-      limit: 200,
-    });
-    const total = channelsResult.channels.length;
-    let done = 0;
-
-    await syncWorkspaceToSupabase(
-      tokens.workspace_id,
-      tokens.user_token,
-      tokens.bot_token,
-      (channelName, done, total) => {
-        if (done === 1) send({ type: "start", total });
-        send({ type: "progress", done, total, channel: channelName });
-      }
-    );
-
-    send({ type: "done" });
-  } catch (err) {
-    send({ type: "error", message: err.message });
-  }
-
-  res.end();
+  syncWorkspaceToSupabase(
+    wid,
+    tokens.user_token,
+    tokens.bot_token,
+    (channelName, done, total) => {
+      syncProgress[wid] = { status: "running", done, total, channel: channelName };
+    }
+  ).then(() => {
+    syncProgress[wid] = { status: "done", done: syncProgress[wid].total, total: syncProgress[wid].total };
+  }).catch((err) => {
+    syncProgress[wid] = { status: "error", message: err.message };
+  });
 });
 
 router.post("/sync", async (req, res) => {
