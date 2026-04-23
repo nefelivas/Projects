@@ -688,7 +688,7 @@
     <div class="workspace-dot"></div>
     <div>
       <div class="workspace-name" id="workspace-name-display"></div>
-      <div class="workspace-label">Slack Workspace</div>
+      <div class="workspace-label">Slack Workspace &nbsp;·&nbsp; <span id="ws-channel-count">—</span> channels &nbsp;·&nbsp; <span id="ws-member-count">—</span> members</div>
     </div>
   </div>
   <div class="table-card">
@@ -760,9 +760,9 @@
     try {
       const data = await fetchJSON('/api/members');
       membersData = data.members || [];
-      renderMemberList();
       const memCount = document.getElementById('ws-member-count');
       if (memCount) memCount.textContent = membersData.length;
+      renderMemberList();
     } catch (e) {
       document.getElementById('members-list').innerHTML = `<div style="padding:16px;color:var(--red);font-size:0.85rem">Failed: ${e.message}</div>`;
     }
