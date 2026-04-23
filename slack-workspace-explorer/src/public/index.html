@@ -640,6 +640,23 @@
       color: var(--text-light);
       margin-bottom: 12px;
     }
+
+    .progress-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 999; display: none;
+      align-items: center; justify-content: center;
+    }
+    .progress-overlay.visible { display: flex; }
+    .progress-card {
+      background: white; border-radius: 12px;
+      padding: 32px 36px; width: 360px; text-align: center;
+    }
+    .progress-title { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .progress-subtitle { font-size: 0.82rem; color: var(--text-mid); margin-bottom: 20px; min-height: 18px; }
+    .progress-bar-wrap { background: var(--border); border-radius: 99px; height: 8px; overflow: hidden; margin-bottom: 10px; }
+    .progress-bar-fill { height: 100%; background: var(--purple); border-radius: 99px; transition: width 0.3s ease; width: 0%; }
+    .progress-count { font-size: 0.78rem; color: var(--text-light); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -1023,19 +1040,45 @@
     const btn = document.getElementById('sync-btn');
     btn.textContent = 'Syncing...';
     btn.disabled = true;
+    const overlay = document.getElementById('progress-overlay');
+    const title = document.getElementById('progress-title');
+    const subtitle = document.getElementById('progress-subtitle');
+    const fill = document.getElementById('progress-bar-fill');
+    const count = document.getElementById('progress-count');
+    overlay.classList.add('visible');
+    title.textContent = 'Syncing workspace...';
+    subtitle.textContent = 'Connecting to Slack';
+    fill.style.width = '0%';
+    count.textContent = '';
     try {
-      const res = await fetch(`/api/sync${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
-      const data = await res.json();
-      showStatus(data.ok ? "Sync complete! Adding bot to public channels..." : `Sync failed: ${data.error}`, data.ok ? "success" : "error");
-      if (data.ok) {
-        const pubRes = await fetch(`/api/public/invite${workspaceId ? "?workspace_id=" + workspaceId : ""}`, { method: "POST" });
-        const pubData = await pubRes.json();
-        showStatus(`Sync complete! Bot added to ${pubData.success || 0} public channels.`, "success");
-      }
-      if (data.ok) loadChannels();
+      await new Promise((resolve, reject) => {
+        const url = `/api/sync/progress${workspaceId ? '?workspace_id=' + workspaceId : ''}`;
+        const es = new EventSource(url);
+        es.onmessage = (e) => {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'start') {
+            count.textContent = `0 / ${msg.total} channels`;
+          } else if (msg.type === 'progress') {
+            const pct = Math.round((msg.done / msg.total) * 100);
+            fill.style.width = pct + '%';
+            count.textContent = `${msg.done} / ${msg.total} channels`;
+            subtitle.textContent = '#' + msg.channel;
+          } else if (msg.type === 'done') {
+            fill.style.width = '100%';
+            subtitle.textContent = 'Sync complete!';
+            es.close(); resolve();
+          } else if (msg.type === 'error') {
+            es.close(); reject(new Error(msg.message));
+          }
+        };
+        es.onerror = () => { es.close(); reject(new Error('Connection lost')); };
+      });
+      showStatus('Sync complete!', 'success');
+      loadChannels();
     } catch (e) {
       showStatus(`Error: ${e.message}`, 'error');
     }
+    overlay.classList.remove('visible');
     btn.textContent = 'Sync All';
     btn.disabled = false;
   }
@@ -1131,5 +1174,14 @@
 
   loadChannels();
 </script>
+
+<div class="progress-overlay" id="progress-overlay">
+  <div class="progress-card">
+    <div class="progress-title" id="progress-title">Syncing workspace...</div>
+    <div class="progress-subtitle" id="progress-subtitle">Connecting to Slack</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
+    <div class="progress-count" id="progress-count"></div>
+  </div>
+</div>
 </body>
 </html>

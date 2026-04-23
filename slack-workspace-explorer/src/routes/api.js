@@ -65,6 +65,46 @@ router.get("/members/:id/channels", async (req, res) => {
   }
 });
 
+router.get("/sync/progress", async (req, res) => {
+  const tokens = await getTokens(req);
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
+  try {
+    const userClient = new WebClient(tokens.user_token);
+    const channelsResult = await userClient.conversations.list({
+      types: "public_channel,private_channel",
+      exclude_archived: true,
+      limit: 200,
+    });
+    const total = channelsResult.channels.length;
+    let done = 0;
+
+    send({ type: "start", total });
+
+    await syncWorkspaceToSupabase(
+      tokens.workspace_id,
+      tokens.user_token,
+      tokens.bot_token,
+      (channelName) => {
+        done++;
+        send({ type: "progress", done, total, channel: channelName });
+      }
+    );
+
+    send({ type: "done" });
+  } catch (err) {
+    send({ type: "error", message: err.message });
+  }
+
+  res.end();
+});
+
 router.post("/sync", async (req, res) => {
   try {
     const tokens = await getTokens(req);
@@ -107,7 +147,6 @@ router.post("/channels/:id/remove", async (req, res) => {
   }
 });
 
-// Add bot to all public channels
 router.post("/public/invite", async (req, res) => {
   try {
     const tokens = await getTokens(req);
@@ -115,34 +154,23 @@ router.post("/public/invite", async (req, res) => {
     const userClient = new WebClient(tokens.user_token);
     const botInfo = await botClient.auth.test();
     const botUserId = botInfo.user_id;
-
-    // Use user token to list ALL public channels (bot token only sees channels it's in)
     const result = await userClient.conversations.list({
       types: "public_channel",
       exclude_archived: true,
       limit: 200,
     });
-
     let success = 0, alreadyIn = 0, failed = 0;
     for (const channel of result.channels) {
       try {
-        // Check if bot is already a member
         const membersRes = await userClient.conversations.members({ channel: channel.id });
-        if (membersRes.members.includes(botUserId)) {
-          alreadyIn++;
-          continue;
-        }
-        // Bot joins the public channel directly
+        if (membersRes.members.includes(botUserId)) { alreadyIn++; continue; }
         await botClient.conversations.join({ channel: channel.id });
         await supabase.from("channels").update({ bot_is_member: true })
           .eq("id", channel.id)
           .eq("workspace_id", tokens.workspace_id);
         success++;
         await new Promise(r => setTimeout(r, 400));
-      } catch (e) {
-        console.error(`Failed to join ${channel.name}:`, e.message);
-        failed++;
-      }
+      } catch (e) { failed++; }
     }
     res.json({ ok: true, success, alreadyIn, failed });
   } catch (err) {
