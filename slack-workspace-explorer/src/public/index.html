@@ -825,7 +825,7 @@
             </div>
           </td>
           <td><span class="tag ${ch.is_private ? 'tag-private' : 'tag-public'}">${ch.is_private ? 'Private' : 'Public'}</span></td>
-          <td class="td-members">${ch.member_count != null ? ch.member_count : '—'}</td>
+          <td class="td-members">${ch.bot_is_member && ch.member_count != null ? ch.member_count : '—'}</td>
           <td class="td-activity">${formatLastActivity(ch.last_activity)}</td>
           <td onclick="event.stopPropagation()">
             ${!ch.bot_is_member
