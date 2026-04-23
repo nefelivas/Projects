@@ -748,6 +748,8 @@
       channelsData = data.channels || [];
       filteredChannels = [...channelsData];
       sortAndRender();
+      const chCount = document.getElementById('ws-channel-count');
+      if (chCount) chCount.textContent = channelsData.length;
     } catch (e) {
       document.getElementById('table-container').innerHTML = `<div style="padding:28px;color:var(--red);font-size:0.85rem">Failed to load: ${e.message}</div>`;
     }
@@ -759,6 +761,8 @@
       const data = await fetchJSON('/api/members');
       membersData = data.members || [];
       renderMemberList();
+      const memCount = document.getElementById('ws-member-count');
+      if (memCount) memCount.textContent = membersData.length;
     } catch (e) {
       document.getElementById('members-list').innerHTML = `<div style="padding:16px;color:var(--red);font-size:0.85rem">Failed: ${e.message}</div>`;
     }
