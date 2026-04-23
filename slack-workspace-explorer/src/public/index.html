@@ -698,7 +698,17 @@
     <div class="workspace-dot"></div>
     <div>
       <div class="workspace-name" id="workspace-name-display"></div>
-      <div class="workspace-label">Slack Workspace &nbsp;·&nbsp; <span id="ws-channel-count">—</span> channels &nbsp;·&nbsp; <span id="ws-member-count">—</span> members</div>
+      <div class="workspace-label">Slack Workspace</div>
+      <div class="ws-badges">
+        <span class="ws-badge ws-badge-channels">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span id="ws-channel-count">—</span> channels
+        </span>
+        <span class="ws-badge ws-badge-members">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <span id="ws-member-count">—</span> members
+        </span>
+      </div>
     </div>
   </div>
   <div class="table-card">
