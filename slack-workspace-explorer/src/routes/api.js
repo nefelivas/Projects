@@ -85,14 +85,12 @@ router.get("/sync/progress", async (req, res) => {
     const total = channelsResult.channels.length;
     let done = 0;
 
-    send({ type: "start", total });
-
     await syncWorkspaceToSupabase(
       tokens.workspace_id,
       tokens.user_token,
       tokens.bot_token,
-      (channelName) => {
-        done++;
+      (channelName, done, total) => {
+        if (done === 1) send({ type: "start", total });
         send({ type: "progress", done, total, channel: channelName });
       }
     );
