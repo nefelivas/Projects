@@ -1110,6 +1110,35 @@
     btn.disabled = false;
   }
 
+  async function showBotOverlay(title, messages) {
+    const overlay = document.getElementById('progress-overlay');
+    const titleEl = document.getElementById('progress-title');
+    const subtitle = document.getElementById('progress-subtitle');
+    const fill = document.getElementById('progress-bar-fill');
+    overlay.classList.add('visible');
+    titleEl.textContent = title;
+    fill.style.width = '0%';
+    let i = 0;
+    subtitle.textContent = messages[0];
+    const msgInterval = setInterval(() => {
+      i = Math.min(i + 1, messages.length - 1);
+      subtitle.textContent = messages[i];
+    }, 3000);
+    const barInterval = setInterval(() => {
+      const cur = parseFloat(fill.style.width) || 0;
+      if (cur < 85) fill.style.width = (cur + (85 - cur) * 0.05) + '%';
+    }, 400);
+    return { msgInterval, barInterval };
+  }
+
+  function hideBotOverlay(intervals) {
+    clearInterval(intervals.msgInterval);
+    clearInterval(intervals.barInterval);
+    document.getElementById('progress-bar-fill').style.width = '100%';
+    document.getElementById('progress-subtitle').textContent = 'Done!';
+    setTimeout(() => document.getElementById('progress-overlay').classList.remove('visible'), 600);
+  }
+
   async function addBotToPrivate() {
     const btn = document.getElementById('add-private-btn');
     btn.textContent = 'Adding...';
