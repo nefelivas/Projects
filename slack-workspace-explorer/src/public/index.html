@@ -667,6 +667,15 @@
     .ws-badge-channels { background: #f3e8f4; color: #4a154b; }
     .ws-badge-members  { background: #e6f7f0; color: #1a7a52; }
     .ws-badge svg { width: 11px; height: 11px; }
+
+    .private-info-banner {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: #E6F1FB; border: 0.5px solid #85B7EB;
+      border-radius: var(--border-radius, 8px);
+      padding: 10px 14px; font-size: 12px; color: #0C447C;
+      line-height: 1.6; margin-bottom: 12px;
+    }
+    .private-info-banner svg { width: 14px; height: 14px; stroke: #185FA5; fill: none; stroke-width: 1.8; flex-shrink: 0; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -710,6 +719,10 @@
         </span>
       </div>
     </div>
+  </div>
+  <div class="private-info-banner">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Private channel activity is only visible after the bot joins. Once added, new messages will be tracked — but past activity won't appear.</span>
   </div>
   <div class="table-card">
   <div class="search-bar">
