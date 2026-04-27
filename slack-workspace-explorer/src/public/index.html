@@ -1141,34 +1141,38 @@
 
   async function addBotToPrivate() {
     const btn = document.getElementById('add-private-btn');
-    btn.textContent = 'Adding...';
     btn.disabled = true;
+    btn.textContent = 'Adding...';
+    const intervals = await showBotOverlay('Adding bot to private channels...', [
+      'Connecting to Slack...', 'Finding private channels...', 'Adding bot...', 'Almost done...'
+    ]);
     try {
       const res = await fetch(`/api/private/invite${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
       const data = await res.json();
-      showStatus(data.ok ? `Done! Added: ${data.success} · Already in: ${data.alreadyIn} · Failed: ${data.failed}` : `Failed: ${data.error}`, data.ok ? 'success' : 'error');
+      hideBotOverlay(intervals);
+      showStatus(data.ok ? `Bot added to ${data.success || 0} private channels.` : `Error: ${data.error}`, data.ok ? 'success' : 'error');
       if (data.ok) loadChannels();
-    } catch (e) {
-      showStatus(`Error: ${e.message}`, 'error');
-    }
-    btn.textContent = 'Add to Private';
+    } catch (e) { hideBotOverlay(intervals); showStatus(`Error: ${e.message}`, 'error'); }
     btn.disabled = false;
+    btn.textContent = 'Add to Private';
   }
 
   async function removeBotFromPrivate() {
     const btn = document.getElementById('remove-private-btn');
-    btn.textContent = 'Removing...';
     btn.disabled = true;
+    btn.textContent = 'Removing...';
+    const intervals = await showBotOverlay('Removing bot from private channels...', [
+      'Connecting to Slack...', 'Finding private channels...', 'Removing bot...', 'Almost done...'
+    ]);
     try {
       const res = await fetch(`/api/private/remove${workspaceId ? '?workspace_id=' + workspaceId : ''}`, { method: 'POST' });
       const data = await res.json();
-      showStatus(data.ok ? `Done! Removed: ${data.success} · Failed: ${data.failed}` : `Failed: ${data.error}`, data.ok ? 'success' : 'error');
+      hideBotOverlay(intervals);
+      showStatus(data.ok ? `Bot removed from ${data.success || 0} private channels.` : `Error: ${data.error}`, data.ok ? 'success' : 'error');
       if (data.ok) loadChannels();
-    } catch (e) {
-      showStatus(`Error: ${e.message}`, 'error');
-    }
-    btn.textContent = 'Remove from Private';
+    } catch (e) { hideBotOverlay(intervals); showStatus(`Error: ${e.message}`, 'error'); }
     btn.disabled = false;
+    btn.textContent = 'Remove from Private';
   }
 
   async function inviteBot(channelId) {
