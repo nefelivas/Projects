@@ -133,8 +133,8 @@
       });
       const data = await res.json();
       if (data.ok) {
-        if (data.user.workspace_id) {
-          window.location.href = `/dashboard?workspace=${data.user.workspace_id}`;
+        if (data.user.workspaces && data.user.workspaces.length > 0) {
+          window.location.href = `/dashboard?workspace=${data.user.workspaces[0].workspace_id}`;
         } else {
           window.location.href = '/install';
         }
